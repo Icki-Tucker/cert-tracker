@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificate Tracker — AI Learning Series 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+:root {
+  --bg:#0d0f14; --s1:#151821; --s2:#1c2030; --s3:#212639;
+  --b1:#252a3a; --b2:#2e3448; --b3:#3a4060;
+  --ac:#6c63ff; --ac2:#a78bfa; --ac3:rgba(108,99,255,.12);
+  --gr:#22d3a0; --gr2:rgba(34,211,160,.15);
+  --ye:#f59e0b; --ye2:rgba(245,158,11,.15);
+  --re:#f87171; --bl:#60a5fa;
+  --pu:#c084fc; --pu2:rgba(192,132,252,.15);
+  --tx:#e2e8f0; --t2:#94a3b8; --t3:#64748b; --mu:#6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:52px;border-bottom:1px solid var(--b1);
+  background:var(--s1);flex-shrink:0;gap:12px;
+}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar h1{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.02em;}
+.topbar p{font-size:10px;color:var(--t2);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.topbar-stat{font-size:11px;color:var(--t2);padding:4px 10px;background:var(--s2);border:1px solid var(--b1);border-radius:6px;}
+.topbar-stat strong{color:var(--tx);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--ac);color:white;}
+.btn-primary:hover{background:#7c74ff;}
+.btn-ghost{background:var(--s2);border:1px solid var(--b2);color:var(--t2);}
+.btn-ghost:hover{border-color:var(--b3);color:var(--tx);}
+.btn-green{background:var(--gr2);border:1px solid rgba(34,211,160,.3);color:var(--gr);}
+.btn-green:hover{background:rgba(34,211,160,.25);}
+.btn-danger{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--re);}
+.btn-danger:hover{background:rgba(248,113,113,.2);}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.badge-ac{background:var(--ac3);color:var(--ac2);border:1px solid rgba(108,99,255,.25);}
+.pulse{width:5px;height:5px;background:var(--ac);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{
+  width:280px;flex-shrink:0;border-right:1px solid var(--b1);
+  background:var(--s1);display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-hdr{
+  padding:14px 16px;border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.sidebar-title{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);}
+.modules-list{flex:1;overflow-y:auto;padding:8px;}
+.module-card{
+  padding:11px 12px;border-radius:9px;cursor:pointer;
+  transition:all .15s;border:1px solid transparent;margin-bottom:4px;
+  position:relative;
+}
+.module-card:hover{background:var(--s2);border-color:var(--b2);}
+.module-card.active{background:var(--ac3);border-color:rgba(108,99,255,.35);}
+.module-card.active .mc-num{color:var(--ac2);}
+.mc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.mc-num{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;}
+.mc-name{font-size:12px;font-weight:600;color:var(--tx);line-height:1.3;flex:1;}
+.mc-course{font-size:10px;color:var(--t2);margin-bottom:7px;line-height:1.4;}
+.mc-bar-wrap{height:4px;background:var(--b2);border-radius:2px;overflow:hidden;margin-bottom:5px;}
+.mc-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ac),var(--gr));transition:width .4s ease;}
+.mc-stats{display:flex;gap:10px;}
+.mc-stat{font-size:9px;font-weight:600;}
+.mc-stat-sent{color:var(--gr);}
+.mc-stat-pend{color:var(--ye);}
+.mc-stat-none{color:var(--t3);}
+.mc-actions{position:absolute;top:8px;right:8px;display:none;gap:4px;}
+.module-card:hover .mc-actions{display:flex;}
+.mc-act-btn{background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:2px 5px;font-size:9px;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;}
+.mc-act-btn:hover{color:var(--re);border-color:rgba(248,113,113,.3);}
+.add-module-form{padding:10px 8px;border-top:1px solid var(--b1);flex-shrink:0;}
+.add-module-form input,.add-module-form select{
+  width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:6px;
+  padding:7px 10px;font-size:11px;color:var(--tx);font-family:'Inter',sans-serif;
+  outline:none;margin-bottom:6px;transition:border-color .2s;
+}
+.add-module-form input:focus,.add-module-form select:focus{border-color:var(--ac);}
+.add-module-form input::placeholder{color:var(--mu);}
+
+/* ── MAIN PANEL ── */
+.main-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* Module header */
+.mod-header{
+  padding:14px 20px;border-bottom:1px solid var(--b1);
+  background:var(--s1);flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.mod-header-left h2{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;letter-spacing:-.02em;}
+.mod-header-left p{font-size:11px;color:var(--t2);margin-top:2px;}
+.mod-kpis{display:flex;gap:8px;flex-wrap:wrap;}
+.mod-kpi{text-align:center;padding:6px 12px;background:var(--s2);border:1px solid var(--b1);border-radius:7px;}
+.mod-kpi .kv{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;line-height:1;}
+.mod-kpi .kl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-top:2px;}
+
+/* Controls bar */
+.controls{
+  padding:10px 20px;border-bottom:1px solid var(--b1);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;
+  background:var(--s1);
+}
+.search-w{position:relative;}
+.search-w input{
+  background:var(--s2);border:1px solid var(--b1);border-radius:7px;
+  padding:7px 10px 7px 28px;font-size:11px;color:var(--tx);
+  font-family:'Inter',sans-serif;outline:none;width:190px;transition:border-color .2s;
+}
+.search-w input:focus{border-color:var(--ac);}
+.search-w input::placeholder{color:var(--mu);}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--mu);pointer-events:none;}
+.filter-btn{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:5px 10px;font-size:10px;font-weight:500;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;}
+.filter-btn:hover{color:var(--tx);border-color:var(--b2);}
+.filter-btn.active{background:var(--ac3);border-color:rgba(108,99,255,.35);color:var(--ac2);font-weight:600;}
+.controls-right{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.learner-count{font-size:10px;color:var(--mu);}
+
+/* Roster table */
+.roster-wrap{flex:1;overflow-y:auto;}
+.roster-table{width:100%;border-collapse:collapse;}
+.roster-table th{
+  font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--mu);padding:9px 16px;text-align:left;
+  background:var(--s2);border-bottom:1px solid var(--b1);
+  position:sticky;top:0;z-index:2;white-space:nowrap;
+}
+.roster-table td{
+  padding:0;border-bottom:1px solid rgba(37,42,58,.6);vertical-align:middle;
+}
+.roster-table tr:last-child td{border-bottom:none;}
+.roster-table tr:hover .cell-inner{background:rgba(108,99,255,.03);}
+.roster-table tr.sent-row .cell-inner{background:rgba(34,211,160,.02);}
+.cell-inner{padding:10px 16px;}
+
+/* Cert toggle button — the main action */
+.cert-toggle{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 12px;border-radius:7px;cursor:pointer;
+  border:1.5px solid var(--b2);background:var(--s2);
+  font-size:11px;font-weight:500;color:var(--t2);
+  font-family:'Inter',sans-serif;transition:all .18s;
+  min-width:130px;justify-content:center;
+}
+.cert-toggle:hover{border-color:var(--ac);color:var(--ac2);}
+.cert-toggle.sent{background:var(--gr2);border-color:rgba(34,211,160,.4);color:var(--gr);}
+.cert-toggle.sent:hover{background:rgba(34,211,160,.08);border-color:rgba(248,113,113,.4);color:var(--re);}
+.cert-toggle .ct-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* Date display & picker */
+.cert-date-wrap{display:flex;flex-direction:column;gap:2px;}
+.cert-date-val{font-size:10px;color:var(--gr);font-weight:500;}
+.cert-date-input{
+  background:var(--s3);border:1px solid var(--b2);border-radius:5px;
+  padding:4px 8px;font-size:10px;color:var(--tx);font-family:'Inter',sans-serif;
+  outline:none;display:none;transition:border-color .2s;
+  color-scheme:dark;
+}
+.cert-date-input:focus{border-color:var(--ac);}
+.cert-date-input.visible{display:block;}
+
+/* Completion status badge */
+.comp-badge{font-size:9px;font-weight:600;padding:2px 7px;border-radius:3px;white-space:nowrap;}
+.cb-done{background:var(--gr2);color:var(--gr);}
+.cb-wip{background:var(--ye2);color:var(--ye);}
+.cb-ns{background:rgba(71,85,105,.15);color:var(--t3);}
+.cb-ob{background:rgba(55,65,81,.2);color:#4b5563;}
+
+/* Notes */
+.notes-input{
+  background:transparent;border:none;outline:none;
+  font-size:10px;color:var(--t2);font-family:'Inter',sans-serif;
+  width:100%;resize:none;padding:0;line-height:1.4;
+  cursor:pointer;
+}
+.notes-input:focus{color:var(--tx);}
+.notes-input::placeholder{color:var(--b3);}
+
+/* Learner name */
+.l-name{font-size:12px;font-weight:500;color:var(--tx);white-space:nowrap;}
+.l-email{font-size:10px;color:var(--t2);margin-top:1px;}
+.l-org{font-size:9px;font-weight:500;padding:1px 6px;border-radius:20px;background:var(--ac3);color:var(--ac2);white-space:nowrap;display:inline-block;margin-top:2px;}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px;text-align:center;color:var(--t2);}
+.empty-state .ei{font-size:48px;margin-bottom:14px;opacity:.25;}
+.empty-state h3{font-size:16px;font-weight:600;color:var(--tx);margin-bottom:6px;}
+.empty-state p{font-size:12px;line-height:1.6;max-width:320px;}
+
+/* ── MODALS ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-bg.hidden{display:none;}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:24px;width:420px;max-width:90vw;}
+.modal h3{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;}
+.modal p{font-size:11px;color:var(--t2);margin-bottom:18px;line-height:1.5;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-bottom:5px;}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:7px;
+  padding:8px 11px;font-size:12px;color:var(--tx);font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--ac);}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--mu);}
+.form-group textarea{resize:vertical;min-height:60px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+
+/* ── EDIT LEARNER MODAL ── */
+.modal-wide{width:580px;}
+.modal-wide h3{margin-bottom:2px;}
+.modal-wide .modal-sub{font-size:11px;color:var(--t2);margin-bottom:18px;}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.edit-grid .full{grid-column:1/-1;}
+.mod-status-grid{display:flex;flex-direction:column;gap:6px;margin-top:2px;max-height:280px;overflow-y:auto;padding-right:2px;}
+.mod-status-row{display:flex;align-items:center;gap:8px;}
+.mod-status-row .mod-dd{flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:8px 11px;font-size:12px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;cursor:pointer;transition:border-color .2s;}
+.mod-status-row .mod-dd:focus{border-color:var(--ac);}
+.mod-status-row .mod-dd option{background:var(--s2);}
+.mod-row-sep{font-size:11px;color:var(--t3);flex-shrink:0;}
+.mod-status-select{background:var(--s3);border:1px solid var(--b2);border-radius:5px;padding:5px 9px;font-size:11px;color:var(--tx);font-family:'Inter',sans-serif;outline:none;cursor:pointer;flex-shrink:0;min-width:130px;}
+.mod-status-select:focus{border-color:var(--ac);}
+.mod-status-select option{background:var(--s2);}
+.edit-btn{display:inline-flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--b2);border-radius:5px;padding:2px 7px;font-size:9px;font-weight:600;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap;margin-left:4px;}
+.edit-btn:hover{border-color:var(--ac);color:var(--ac2);}
+.delete-btn{background:transparent;border:none;color:var(--t3);cursor:pointer;font-size:10px;padding:2px 4px;border-radius:4px;font-family:'Inter',sans-serif;}
+.delete-btn:hover{color:var(--re);background:rgba(248,113,113,.1);}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  background:var(--s2);border:1px solid var(--b2);border-radius:9px;
+  padding:10px 16px;font-size:11px;color:var(--tx);
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+  display:none;align-items:center;gap:9px;min-width:200px;
+}
+.toast.show{display:flex;animation:ti .18s ease;}
+@keyframes ti{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--b3);}
+
+/* Sortable headers */
+.sortable{cursor:pointer;user-select:none;}
+.sortable:hover{color:var(--t2);}
+
+/* ── TAB NAV ── */
+.tab-nav{display:flex;border-bottom:1px solid var(--b1);background:var(--s1);flex-shrink:0;padding:0 20px;gap:2px;}
+.tab-nav-btn{padding:10px 16px;font-size:11px;font-weight:500;color:var(--t2);cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;margin-bottom:-1px;}
+.tab-nav-btn:hover{color:var(--tx);}
+.tab-nav-btn.active{color:var(--ac2);border-bottom-color:var(--ac);font-weight:600;}
+
+/* ── DASHBOARD VIEW ── */
+.dash-view{flex:1;overflow-y:auto;padding:24px 28px;display:none;}
+.dash-view.active{display:block;}
+.tracker-view{display:flex;flex:1;overflow:hidden;}
+.tracker-view.hidden{display:none;}
+
+.dash-section-title{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.dash-section-title::after{content:'';flex:1;height:1px;background:var(--b1);}
+
+/* KPI row */
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;}
+.dash-kpi{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:16px 18px;position:relative;overflow:hidden;}
+.dash-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.dash-kpi.k-total::before{background:var(--ac);}
+.dash-kpi.k-sent::before{background:var(--pu);}
+.dash-kpi.k-needs::before{background:var(--ye);}
+.dash-kpi.k-learners::before{background:var(--bl);}
+.dash-kpi.k-modules::before{background:var(--gr);}
+.dash-kpi.k-rate::before{background:linear-gradient(90deg,var(--ac),var(--gr));}
+.dk-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-bottom:7px;}
+.dk-value{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;line-height:1;letter-spacing:-.03em;}
+.dash-kpi.k-total .dk-value{color:var(--ac2);}
+.dash-kpi.k-sent .dk-value{color:var(--pu);}
+.dash-kpi.k-needs .dk-value{color:var(--ye);}
+.dash-kpi.k-learners .dk-value{color:var(--bl);}
+.dash-kpi.k-modules .dk-value{color:var(--gr);}
+.dash-kpi.k-rate .dk-value{color:var(--gr);}
+.dk-sub{font-size:10px;color:var(--t2);margin-top:4px;}
+.dk-bar{height:3px;background:var(--b1);border-radius:2px;overflow:hidden;margin-top:8px;}
+.dk-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ac),var(--gr));}
+
+/* Two-col grid */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;}
+@media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
+.dash-panel{background:var(--s1);border:1px solid var(--b1);border-radius:11px;overflow:hidden;}
+.dp-hdr{padding:13px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;}
+.dp-title{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--tx);}
+.dp-body{padding:14px 16px;}
+
+/* Per-module progress rows */
+.mod-progress-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1);cursor:pointer;transition:background .1s;}
+.mod-progress-row:last-child{border-bottom:none;}
+.mod-progress-row:hover{background:rgba(108,99,255,.04);margin:0 -16px;padding-left:16px;padding-right:16px;}
+.mpr-name{font-size:11px;font-weight:500;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mpr-bar{width:80px;flex-shrink:0;height:5px;background:var(--b2);border-radius:3px;overflow:hidden;}
+.mpr-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.mpr-pct{font-size:11px;font-weight:600;width:32px;text-align:right;flex-shrink:0;}
+.mpr-counts{display:flex;gap:4px;flex-shrink:0;}
+.mpr-c{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.mpr-c-sent{background:var(--pu2);color:var(--pu);}
+.mpr-c-need{background:var(--ye2);color:var(--ye);}
+.mpr-c-ns{background:rgba(71,85,105,.15);color:var(--t3);}
+
+/* Org table */
+.org-table{width:100%;border-collapse:collapse;}
+.org-table th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);padding:7px 12px;text-align:left;border-bottom:1px solid var(--b1);}
+.org-table td{font-size:11px;padding:8px 12px;border-bottom:1px solid rgba(37,42,58,.5);vertical-align:middle;}
+.org-table tr:last-child td{border-bottom:none;}
+.org-table tr:hover td{background:rgba(108,99,255,.03);}
+
+/* Needs cert list */
+.needs-list{max-height:260px;overflow-y:auto;}
+.needs-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b1);}
+.needs-item:last-child{border-bottom:none;}
+.ni-name{font-size:11px;font-weight:500;color:var(--tx);flex:1;}
+.ni-email{font-size:10px;color:var(--t2);}
+.ni-mod{font-size:9px;padding:2px 6px;border-radius:3px;background:var(--ye2);color:var(--ye);font-weight:600;white-space:nowrap;}
+.ni-go{font-size:9px;color:var(--ac2);cursor:pointer;padding:2px 6px;border-radius:3px;background:var(--ac3);border:none;font-family:'Inter',sans-serif;white-space:nowrap;}
+.ni-go:hover{background:rgba(108,99,255,.2);}
+
+/* Recent activity */
+.activity-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--b1);font-size:11px;}
+.activity-item:last-child{border-bottom:none;}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--pu);flex-shrink:0;}
+.ai-text{flex:1;color:var(--tx);}
+.ai-date{font-size:10px;color:var(--t3);flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div>
+      <h1>🎓 Certificate Tracker — AI Learning Series 2026</h1>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-stat" id="globalStat">Loading…</div>
+    <button class="btn btn-ghost" onclick="openAddLearner()">+ Add Learner</button>
+    <button class="btn btn-primary" onclick="openAddModule()">+ Add Module</button>
+    <div class="badge badge-ac"><div class="pulse"></div>Auto-saved</div>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-nav-btn" id="tab-dash-btn" onclick="switchTab('dash')">📊 Dashboard</button>
+  <button class="tab-nav-btn active" id="tab-tracker-btn" onclick="switchTab('tracker')">🏆 Certificate Tracker</button>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div class="dash-view" id="dash-view">
+  <div class="dash-kpis" id="dash-kpis"></div>
+  <div style="margin-bottom:16px;">
+    <div class="dash-panel">
+      <div class="dp-hdr"><div class="dp-title">📊 Module Scorecard</div><span id="dp-mod-subtitle" style="font-size:10px;color:var(--mu)"></span></div>
+      <div style="overflow-x:auto;"><div class="dp-body" id="dp-modules"></div></div>
+    </div>
+  </div>
+  <div style="margin-bottom:16px;">
+    <div class="dash-panel">
+      <div class="dp-hdr"><div class="dp-title">Certificate Status Overview</div></div>
+      <div class="dp-body" id="dp-status"></div>
+    </div>
+  </div>
+  <div class="dash-grid">
+    <div class="dash-panel">
+      <div class="dp-hdr"><div class="dp-title">By Organization</div></div>
+      <div style="overflow-x:auto"><table class="org-table" id="dp-org-table"></table></div>
+    </div>
+    <div class="dash-panel">
+      <div class="dp-hdr"><div class="dp-title">⚡ Needs Certificate</div><span id="dp-needs-count" style="font-size:10px;color:var(--mu)"></span></div>
+      <div class="dp-body"><div class="needs-list" id="dp-needs"></div></div>
+    </div>
+  </div>
+  <div style="margin-bottom:28px;">
+    <div class="dash-panel">
+      <div class="dp-hdr"><div class="dp-title">Recent Certificate Activity</div></div>
+      <div class="dp-body" id="dp-activity"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TRACKER VIEW -->
+<div class="tracker-view" id="tracker-view" style="display:flex;">
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-hdr">
+      <span class="sidebar-title">Modules</span>
+      <span id="modCount" style="font-size:10px;color:var(--mu)"></span>
+    </div>
+    <div class="modules-list" id="modulesList"></div>
+    <!-- Quick add -->
+    <div class="add-module-form">
+      <input type="text" id="quickModName" placeholder="Module name (e.g. AI Module 7)" onkeydown="if(event.key==='Enter')quickAddModule()">
+      <input type="text" id="quickModCourse" placeholder="Course title (optional)" onkeydown="if(event.key==='Enter')quickAddModule()">
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="quickAddModule()">+ Add Module</button>
+    </div>
+  </div>
+
+  <!-- MAIN PANEL -->
+  <div class="main-panel" id="mainPanel">
+    <div class="empty-state" id="emptyState">
+      <div class="ei">🏆</div>
+      <h3>Select a module to get started</h3>
+      <p>Choose a module from the left panel to view the learner roster and track certificate delivery. All 109 learners are already loaded — just pick a module.</p>
+    </div>
+    <div id="rosterView" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <!-- Module header -->
+      <div class="mod-header">
+        <div class="mod-header-left">
+          <h2 id="modTitle">Module</h2>
+          <p id="modSubtitle"></p>
+        </div>
+        <div class="mod-kpis" id="modKPIs"></div>
+      </div>
+      <!-- Controls -->
+      <div class="controls">
+        <div class="search-w">
+          <span class="si">🔍</span>
+          <input type="text" id="rosterSearch" placeholder="Search name or email…" oninput="renderRoster()">
+        </div>
+        <button class="filter-btn active" onclick="setRosterFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setRosterFilter('not-done',this)">Not Done</button>
+        <button class="filter-btn" onclick="setRosterFilter('done',this)">Module Complete</button>
+        <button class="filter-btn" onclick="setRosterFilter('not-sent',this)">Not Sent</button>
+        <button class="filter-btn" onclick="setRosterFilter('sent',this)">Cert Sent ✓</button>
+        <button class="filter-btn" onclick="setRosterFilter('needs',this)">⚡ Needs Cert</button>
+        <div class="controls-right">
+          <span class="learner-count" id="rosterCount"></span>
+          <button class="btn btn-green" onclick="batchMarkSent()" id="batchBtn" title="Mark all module-complete learners as cert sent (today's date)">⚡ Mark all eligible sent</button>
+        </div>
+      </div>
+      <!-- Roster -->
+      <div class="roster-wrap">
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th style="width:24px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="accent-color:var(--ac)"></th>
+              <th class="sortable" onclick="setSort('name')">Learner <span id="sort-name"></span></th>
+              <th>Email</th>
+              <th>Org / Client</th>
+              <th class="sortable" onclick="setSort('modStatus')">Module Status <span id="sort-modStatus"></span></th>
+              <th class="sortable" onclick="setSort('certSent')">Certificate <span id="sort-certSent"></span></th>
+              <th class="sortable" onclick="setSort('dateSent')">Date Sent <span id="sort-dateSent"></span></th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /layout -->
+</div><!-- /tracker-view -->
+
+<!-- ADD MODULE MODAL -->
+<div class="modal-bg hidden" id="addModuleModal">
+  <div class="modal">
+    <h3>Add New Module</h3>
+    <p>A new module will be added to the sidebar with all 109 learners pre-loaded in their roster.</p>
+    <div class="form-group"><label>Module Name</label><input type="text" id="newModName" placeholder="e.g. AI Module 7"></div>
+    <div class="form-group"><label>Course Title</label><input type="text" id="newModCourse" placeholder="e.g. Advanced Prompt Design"></div>
+    <div class="form-group"><label>Date Added</label><input type="date" id="newModDate"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addModuleModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addModule()">Add Module</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD LEARNER MODAL -->
+<div class="modal-bg hidden" id="addLearnerModal">
+  <div class="modal">
+    <h3>Add Learner</h3>
+    <p>This learner will be added to all existing modules with a blank certificate status.</p>
+    <div class="form-group"><label>Full Name</label><input type="text" id="newLName" placeholder="e.g. Maria Santos"></div>
+    <div class="form-group"><label>Email Address</label><input type="email" id="newLEmail" placeholder="e.g. maria@example.com"></div>
+    <div class="form-group"><label>Organization / Client</label><input type="text" id="newLOrg" placeholder="e.g. Aven"></div>
+    <div class="form-group"><label>Notes (optional)</label><textarea id="newLNotes" placeholder="Any additional info…"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addLearnerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addLearner()">Add Learner</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATCH DATE MODAL -->
+<div class="modal-bg hidden" id="batchModal">
+  <div class="modal">
+    <h3>Mark All Eligible as Sent</h3>
+    <p id="batchMsg">This will mark all learners who completed this module as certificate sent.</p>
+    <div class="form-group"><label>Date Sent</label><input type="date" id="batchDate"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('batchModal')">Cancel</button>
+      <button class="btn btn-green" onclick="confirmBatch()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT LEARNER MODAL -->
+<div class="modal-bg hidden" id="editLearnerModal">
+  <div class="modal modal-wide">
+    <h3>Edit Learner</h3>
+    <p class="modal-sub" id="editLearnerSub">Update this learner's information and module statuses.</p>
+    <div class="edit-grid">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="editLName" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="editLEmail" placeholder="email@example.com">
+      </div>
+      <div class="form-group">
+        <label>Organization / Client</label>
+        <input type="text" id="editLOrg" placeholder="e.g. Aven">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input type="text" id="editLNotes" placeholder="Any notes about this learner">
+      </div>
+      <div class="form-group full">
+        <label>Module Completion Status</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <select id="editModPicker" class="mod-dd" style="flex:1" onchange="syncModStatus()"></select>
+          <span style="font-size:13px;color:var(--t3);flex-shrink:0;">→</span>
+          <select id="editStatusPicker" class="mod-dd" style="max-width:160px">
+            <option value="Done">Done</option>
+            <option value="WIP">WIP</option>
+            <option value="Not Started">Not Started</option>
+            <option value="Off Boarded">Off Boarded</option>
+          </select>
+        </div>
+        <p style="font-size:10px;color:var(--t3);margin-top:8px;">Select a module then set its status. Changes are saved when you click Save Changes.</p>
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="btn btn-danger" onclick="deleteLearner()">🗑 Remove Learner</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('editLearnerModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEditLearner()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="tI"></span><span id="tM"></span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// PREFILLED DATA — 109 learners + 6 modules from Excel files
+// ═══════════════════════════════════════════════════════════════════
+const PREFILL = {"learners": [{"id": "96", "name": "Aiko Logmao", "email": "aiko.juanitas@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_116", "name": "Aileen Jane Espanol", "email": "ajespanol28@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "43", "name": "Aldrina Martin Dacalanio", "email": "aldrina102406@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "90", "name": "Alfredo II Magdalera", "email": "pilipinaspride08@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "62", "name": "Allysa Angela Romero", "email": "ahrie.romero@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_117", "name": "Alyssa Gloria Acosta", "email": "ally.montano.acosta@gmail.com", "org": "Aven", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "85", "name": "Andrei Pierre Natividad", "email": "shikuchi7@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "97", "name": "Angelo Aggabao", "email": "angelopaggabao@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "8", "name": "Angelo Francis Mendoza", "email": "angelo.francis.mendoza@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "50", "name": "Anna Rose Carungay", "email": "annarosecarungay@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_113", "name": "Annabelle Bersabe", "email": "aanne78@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "51", "name": "Annabelle Veraces", "email": "annabelleveraces@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "106", "name": "April Santos", "email": "aprilagotana.santos@gmail.com", "org": "Nimali3", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "44", "name": "Armando Miguel Jr Samia", "email": "migosamia@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "68", "name": "Audrey Vaughn Tolentino", "email": "bonbomb1@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "67", "name": "Bernadette Pablo", "email": "bernadette.diazpablo@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "86", "name": "Bonnie Carlo Balais", "email": "carlo_balais15@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "34", "name": "Bryan Russell Quejayco Jr", "email": "briehq@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "22", "name": "Carlo Benjamin Ferrer", "email": "carloferrer07@myyahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "49", "name": "Carlos Macabenta III", "email": "carlmacabentz05@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "100", "name": "Chaiya Cerise Roces-Pontillas", "email": "chaiya.roces07@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "54", "name": "Chariza Caharian", "email": "chaza2008@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "65", "name": "Charlene Casasis", "email": "charlenecasasis@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "58", "name": "Charmaine Buno-Garcia", "email": "charmainebuno@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "9", "name": "Christian Cocharo", "email": "x3mexian@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "3", "name": "Clairol Sagaysay", "email": "clairolsagaysay@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "105", "name": "Claudette Obligado", "email": "claudettetalledo@gmail.com", "org": "Rivington Company", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "66", "name": "Dan Gandhi Pascua", "email": "gandhipascua@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "18", "name": "Dandy Dela Pena", "email": "junomole@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "15", "name": "Dane Marc Villanueva", "email": "dmavillanueva@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "25", "name": "Daniel Griff Arellano", "email": "arellanodanielgriff@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "1", "name": "Deo Magat", "email": "deomagat@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "28", "name": "Diane Oliveros", "email": "deeeoliveros17@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "73", "name": "Edrian Baylon", "email": "edbaylon21@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "27", "name": "Eliezer Paredes", "email": "zryprds@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "39", "name": "Ella Prima Edradan", "email": "elpriedra89@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "104", "name": "Elyza Duldulao", "email": "elyzaduldulao03@gmail.com", "org": "Nimali3", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "103", "name": "Frances Denice De Guzman", "email": "denicevstheinternet@gmail.com", "org": "Shortcake Albums", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "87", "name": "Geelenn Calalang", "email": "geelenncalalang@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "23", "name": "Glorica Avila", "email": "ricaavila230@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "40", "name": "Henry De Vera", "email": "henrypdevera.eyt@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "74", "name": "Hershey Matining", "email": "hersheymatining@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "12", "name": "Jarryd John Perez", "email": "perezjarrydjohn@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "76", "name": "Jeffrey Jimenez", "email": "jeffreypjimenez@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "l_m_118", "name": "Jemma Lynn Chua", "email": "jemmachua@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "88", "name": "Jeneth Santiago", "email": "santiago.jeneth1985@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "81", "name": "Jenina Kloie Crisologo", "email": "crisologojenina@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "102", "name": "Jennifer Camille Blancaflor", "email": "jennifercamilleblancaflor@gmail.com", "org": "Sun Acquisitions", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "14", "name": "Jennylyn Dacara", "email": "dacarajen@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "24", "name": "Jerica Marie Camacho", "email": "camacho.jm.313@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "30", "name": "Jermie Libungan", "email": "jlibungan@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "42", "name": "Jessa Herrera", "email": "jessajoyramelherrera@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "36", "name": "Johannes Alfredo David Abion", "email": "jabion1026@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "37", "name": "John Carlo Bejona", "email": "johncarloinprogress@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_114", "name": "John Yancy Evangelista", "email": "johnyancy.evangelista@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "91", "name": "Joseph Mar S. Garduce", "email": "gadhou13@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "21", "name": "Jowie-Ann Alejandro", "email": "jowieannalejandro@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "57", "name": "Joyce Christine Enriquez", "email": "joycechristineenriquez@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "41", "name": "Julie Ann Gemal-Cari\u00f1o", "email": "julieanngemal@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "79", "name": "Julius Christian Braza", "email": "juliuschristianbraza@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "13", "name": "Justine Eraldo", "email": "justeraldo1997@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "92", "name": "Katrina Dianne Barribal", "email": "barribaldana@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "84", "name": "Keith Cueto", "email": "kdcfrancisco@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_115", "name": "Kyle Jumayne Francisco", "email": "franciscokyle.kf@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "33", "name": "Lady Rose Munalem", "email": "munalem.ladyrosec@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "11", "name": "Ma. Angelica Altavano", "email": "maangelica.altavano@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "46", "name": "Ma. Divina Balane", "email": "balanedivine09@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "61", "name": "Ma. Renelda Santos", "email": "marensantos@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "69", "name": "Mara Mae Catanduanes", "email": "virtualmara28@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "38", "name": "Maribeth Alcantara", "email": "maribethalcantara08@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "6", "name": "Maricon Javier", "email": "maricon.javier@hotmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "93", "name": "Marjorie Jane Lodo", "email": "mjllodo@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "45", "name": "Mary Jane Angeles", "email": "mjangeles0876@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "72", "name": "Mary Krisna Jumarang", "email": "krismjumarang@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "83", "name": "Mary Michelle Villanera", "email": "mitchvillanera@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "94", "name": "Mhyra Luz Baguna", "email": "mhyrabaguna@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "32", "name": "Michael Lorenz Nicosia", "email": "michaellorenznicosia@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "107", "name": "Michelle Austria", "email": "michelleaustria0907@yahoo.com", "org": "Infillion", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "55", "name": "Michelle Eleonor Malazzab", "email": "michelleeleonormalazzab@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "82", "name": "Michelle Manipol Mesias", "email": "manipolmichelle24@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "99", "name": "Mohamad Marwan Burhani", "email": "mburhani@ualberta.ca", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "89", "name": "Nancy Dionisio", "email": "nance_rd@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "109", "name": "Nathaniel Silvestre", "email": "nathanslv13@gmail.com", "org": "Infillion", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "77", "name": "Neil Churchill Ani\u00f1on", "email": "neilchillo@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "7", "name": "Neil Shane Napoles", "email": "neilshanepili@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_119", "name": "Ni\u00f1o Generyll Barbosa", "email": "veronikageneryll@gmail.com", "org": "Aven", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "108", "name": "Pauline Anne Mariz Miguel", "email": "paulinemiguel08@gmail.com", "org": "Liberty Home Mortgage", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "60", "name": "Pearl Grace Fetalcorin", "email": "pearl.fetalcorin@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "63", "name": "Phoebe Rose Quicho", "email": "eurekaleigh1730@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "WIP"}}, {"id": "47", "name": "Pinky Torres", "email": "pinkytorres032092@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_112", "name": "Princess Hermae Moronio-Magura", "email": "princess.hermae@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "95", "name": "Rainer Maalik Mercado", "email": "maalik.mercado@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "10", "name": "Reena Joy Galecio", "email": "reena_2989@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "75", "name": "Reign Mina", "email": "smreign@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "71", "name": "Riah Rosales", "email": "riah.rosales24@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "20", "name": "Rizzelle Jea Factes", "email": "ellefactes@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "31", "name": "Roby Pacoma", "email": "robypacoma@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_110", "name": "Romar Macaraeg", "email": "mc.romar00@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "70", "name": "Romnic Carias", "email": "romnic_carias@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "48", "name": "Ronin Marquez", "email": "roninmarkus@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "59", "name": "Rose Pearly Sandig", "email": "rpearl.vasquez@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "80", "name": "Ruth May Tolentino", "email": "ruthmay.tolentino@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "4", "name": "Sarah Mae Melgar", "email": "sarahmaemelgar@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_120", "name": "Ser John Vincent Romarate", "email": "sjvinz@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "29", "name": "Shaira Mae Ringor", "email": "sayson.shaimae@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_111", "name": "Shayne Valencia", "email": "shayne.r.valencia@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "98", "name": "Sheila Cristinor", "email": "sheilaqc19@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "35", "name": "Sherwin Amparo", "email": "samparo0925@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "19", "name": "Shirley Ann Sibangan", "email": "sasibangan@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "26", "name": "Vanissa Evangelista", "email": "vanissaevangelista3030@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "56", "name": "Venus Lyn Fernandez", "email": "venus_fernandez2000@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_121", "name": "Victoria Lumpias", "email": "victoria.lumpias@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "64", "name": "Vivian Malinao", "email": "vivi.malinao@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "17", "name": "Wilfredo Ociones", "email": "wilfredo.ocionesfa@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "5", "name": "Xeleena Jordan Acosta", "email": "eenajoe.acosta@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "78", "name": "Zela Shane Flores", "email": "floreszelashane@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}], "modules": [["AI Module 1", "AI For Everyone"], ["AI Module 2", "Workflow Automation using Generative AI"], ["AI Module 3", "Prompt Engineering for ChatGPT"], ["AI Module 4", "Start Writing Prompts Like a Pro"], ["AI Module 5", "Prompts for Everyday Work Tasks"], ["AI Module 6", "Speed Up Data Analysis and Presentation Building"]]};
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE — load from localStorage or seed from prefill
+// ═══════════════════════════════════════════════════════════════════
+const STORE_KEY = 'certTracker_v3';
+
+function loadState() {
+  // Build the fresh seed from PREFILL
+  const freshModules = PREFILL.modules.map((m, i) => ({
+    id: `mod_${i+1}`,
+    name: m[0],
+    course: m[1],
+    dateAdded: new Date().toISOString().split('T')[0],
+    order: i,
+  }));
+  const freshLearners = PREFILL.learners.map(l => ({
+    id: l.id,
+    name: l.name,
+    email: l.email,
+    org: l.org || 'Aven',
+    moduleStatuses: l.modules,
+    notes: '',
+  }));
+
+  // Try to load saved state
+  let saved = null;
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) saved = JSON.parse(raw);
+  } catch(e) {}
+
+  // No saved state — use fresh seed
+  if (!saved) return { modules: freshModules, learners: freshLearners, certs: {} };
+
+  // Saved state exists — merge: add any PREFILL learners not already saved
+  // This ensures new people added to PREFILL always appear even if localStorage is stale
+  const savedIds   = new Set(saved.learners.map(l => l.id));
+  const savedEmails = new Set(saved.learners.map(l => (l.email||'').toLowerCase()).filter(Boolean));
+
+  freshLearners.forEach(fl => {
+    const alreadyById    = savedIds.has(fl.id);
+    const alreadyByEmail = fl.email && savedEmails.has(fl.email.toLowerCase());
+    if (!alreadyById && !alreadyByEmail) {
+      saved.learners.push(fl);
+    }
+  });
+
+  // Also sync updated names/emails/orgs from PREFILL into saved records
+  freshLearners.forEach(fl => {
+    const match = saved.learners.find(sl =>
+      sl.id === fl.id ||
+      (fl.email && sl.email && fl.email.toLowerCase() === sl.email.toLowerCase())
+    );
+    if (match) {
+      match.name  = fl.name;
+      match.email = fl.email;
+      match.org   = fl.org;
+    }
+  });
+
+  // Sort learners alphabetically
+  saved.learners.sort((a, b) => a.name.localeCompare(b.name));
+
+  return saved;
+}
+
+let STATE = loadState();
+
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ACTIVE MODULE & FILTERS
+// ═══════════════════════════════════════════════════════════════════
+let activeModId = null;
+let rosterFilter = 'all';
+let sortCol = 'name';
+let sortDir = 1;
+
+// ═══════════════════════════════════════════════════════════════════
+// CERT RECORD HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function certKey(learnerId, moduleId) { return `${learnerId}__${moduleId}`; }
+function getCert(learnerId, moduleId) { return STATE.certs[certKey(learnerId, moduleId)] || { sent: false, date: '', notes: '' }; }
+function setCert(learnerId, moduleId, data) {
+  STATE.certs[certKey(learnerId, moduleId)] = data;
+  save();
+}
+
+function getModStatus(learner, moduleId) {
+  // Map module id (mod_1, mod_2…) to prefill key
+  return learner.moduleStatuses?.[moduleId] || 'Not Started';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════════════════════════════════════════
+function renderSidebar() {
+  const list = document.getElementById('modulesList');
+  document.getElementById('modCount').textContent = `${STATE.modules.length}`;
+
+  list.innerHTML = STATE.modules.map(m => {
+    const total = STATE.learners.length;
+    const sent = STATE.learners.filter(l => getCert(l.id, m.id).sent).length;
+    const eligible = STATE.learners.filter(l => getModStatus(l, m.id) === 'Done').length;
+    const pct = eligible > 0 ? Math.round(sent / eligible * 100) : 0;
+    const needs = eligible - sent;
+
+    return `<div class="module-card ${activeModId === m.id ? 'active' : ''}" onclick="selectModule('${m.id}')">
+      <div class="mc-top">
+        <span class="mc-num">${m.name}</span>
+      </div>
+      <div class="mc-name">${m.course || 'Untitled Course'}</div>
+      <div class="mc-bar-wrap"><div class="mc-bar" style="width:${pct}%"></div></div>
+      <div class="mc-stats">
+        <span class="mc-stat mc-stat-sent">✓ ${sent} sent</span>
+        ${needs > 0 ? `<span class="mc-stat mc-stat-pend">⚡ ${needs} pending</span>` : ''}
+        <span class="mc-stat mc-stat-none">${total - eligible} not done</span>
+      </div>
+      <div class="mc-actions">
+        <button class="mc-act-btn" onclick="event.stopPropagation();deleteModule('${m.id}')" title="Delete module">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderGlobalStat();
+}
+
+function renderGlobalStat() {
+  const totalCerts = Object.values(STATE.certs).filter(c => c.sent).length;
+  const totalPossible = STATE.modules.length * STATE.learners.length;
+  document.getElementById('globalStat').innerHTML =
+    `<strong>${totalCerts}</strong> certs sent · <strong>${STATE.learners.length}</strong> learners · <strong>${STATE.modules.length}</strong> modules`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODULE SELECTION
+// ═══════════════════════════════════════════════════════════════════
+function selectModule(modId) {
+  activeModId = modId;
+  rosterFilter = 'all';
+  sortCol = 'name'; sortDir = 1;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === 'All');
+  });
+  document.getElementById('rosterSearch').value = '';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('rosterView').style.display = 'flex';
+  renderSidebar();
+  renderModuleHeader();
+  renderRoster();
+}
+
+function renderModuleHeader() {
+  const m = STATE.modules.find(x => x.id === activeModId);
+  if (!m) return;
+  document.getElementById('modTitle').textContent = `${m.name} — ${m.course || 'Untitled'}`;
+  document.getElementById('modSubtitle').textContent = m.dateAdded ? `Added ${m.dateAdded}` : '';
+
+  const total = STATE.learners.length;
+  const eligible = STATE.learners.filter(l => getModStatus(l, m.id) === 'Done').length;
+  const sent = STATE.learners.filter(l => getCert(l.id, m.id).sent).length;
+  const needs = eligible - sent;
+  const pct = eligible > 0 ? Math.round(sent / eligible * 100) : 0;
+
+  document.getElementById('modKPIs').innerHTML = `
+    <div class="mod-kpi"><div class="kv" style="color:var(--t2)">${total}</div><div class="kl">Learners</div></div>
+    <div class="mod-kpi"><div class="kv" style="color:var(--gr)">${eligible}</div><div class="kl">Completed</div></div>
+    <div class="mod-kpi"><div class="kv" style="color:var(--pu)">${sent}</div><div class="kl">Cert Sent</div></div>
+    <div class="mod-kpi"><div class="kv" style="color:var(--ye)">${needs}</div><div class="kl">Needs Cert</div></div>
+    <div class="mod-kpi"><div class="kv" style="color:${pct===100?'var(--gr)':pct>50?'var(--bl)':'var(--ye)'}">${pct}%</div><div class="kl">Sent Rate</div></div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ROSTER RENDER
+// ═══════════════════════════════════════════════════════════════════
+function setRosterFilter(f, btn) {
+  rosterFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRoster();
+}
+
+function setSort(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  ['name','modStatus','certSent','dateSent'].forEach(c => {
+    document.getElementById('sort-'+c).textContent = sortCol===c?(sortDir===1?' ▲':' ▼'):'';
+  });
+  renderRoster();
+}
+
+function renderRoster() {
+  if (!activeModId) return;
+  const q = (document.getElementById('rosterSearch').value || '').toLowerCase().trim();
+
+  let learners = STATE.learners.filter(l => {
+    if (q && !l.name.toLowerCase().includes(q) && !(l.email||'').toLowerCase().includes(q)) return false;
+    const cert = getCert(l.id, activeModId);
+    const modSt = getModStatus(l, activeModId);
+    if (rosterFilter === 'sent') return cert.sent;
+    if (rosterFilter === 'not-sent') return !cert.sent;
+    if (rosterFilter === 'done') return modSt === 'Done';
+    if (rosterFilter === 'not-done') return modSt !== 'Done' && modSt !== 'Off Boarded';
+    if (rosterFilter === 'needs') return modSt === 'Done' && !cert.sent;
+    return true;
+  });
+
+  // Sort
+  learners.sort((a, b) => {
+    let av, bv;
+    if (sortCol === 'name') { av = a.name; bv = b.name; }
+    else if (sortCol === 'modStatus') { av = getModStatus(a, activeModId); bv = getModStatus(b, activeModId); }
+    else if (sortCol === 'certSent') { av = getCert(a.id, activeModId).sent?1:0; bv = getCert(b.id, activeModId).sent?1:0; }
+    else if (sortCol === 'dateSent') { av = getCert(a.id, activeModId).date||''; bv = getCert(b.id, activeModId).date||''; }
+    else { av = a[sortCol]||''; bv = b[sortCol]||''; }
+    if (typeof av === 'number') return (av - bv) * sortDir;
+    return String(av).localeCompare(String(bv)) * sortDir;
+  });
+
+  document.getElementById('rosterCount').textContent = `${learners.length} learner${learners.length!==1?'s':''}`;
+
+  const tbody = document.getElementById('rosterBody');
+  tbody.innerHTML = learners.map(l => {
+    const cert = getCert(l.id, activeModId);
+    const modSt = getModStatus(l, activeModId);
+    const isSent = cert.sent;
+    const isOB = modSt === 'Off Boarded';
+
+    const stCls = modSt==='Done'?'cb-done':modSt==='WIP'?'cb-wip':modSt==='Off Boarded'?'cb-ob':'cb-ns';
+    const stLabel = modSt==='Not Started'?'Not Started':modSt;
+
+    const certBtn = isOB ? '<span style="font-size:10px;color:var(--t3)">Off Boarded</span>' :
+      `<button class="cert-toggle ${isSent?'sent':''}"
+        onclick="toggleCert('${l.id}')"
+        title="${isSent?'Click to undo':'Click to mark sent'}">
+        <span class="ct-dot"></span>
+        ${isSent ? '✓ Cert Sent' : 'Mark Sent'}
+      </button>`;
+
+    const dateField = isOB ? '' : `
+      <div class="cert-date-wrap">
+        ${isSent && cert.date ? `<span class="cert-date-val">${formatDisplayDate(cert.date)}</span>` : ''}
+        <input type="date" class="cert-date-input ${isSent?'visible':''}"
+          id="date_${l.id}"
+          value="${cert.date||''}"
+          onchange="updateDate('${l.id}', this.value)"
+          style="color-scheme:dark">
+      </div>`;
+
+    return `<tr class="${isSent?'sent-row':''}">
+      <td><div class="cell-inner"><input type="checkbox" class="row-check" data-lid="${l.id}" style="accent-color:var(--ac)"></div></td>
+      <td><div class="cell-inner">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="l-name">${l.name}</div>
+          <button class="edit-btn" onclick="openEditLearner('${l.id}')" title="Edit learner">✏ Edit</button>
+        </div>
+        ${l.email ? `<div class="l-email">${l.email}</div>` : `<div class="l-email" style="color:var(--b3);font-style:italic">No email</div>`}
+        ${l.org ? `<span class="l-org">${l.org}</span>` : ''}
+      </div></td>
+      <td><div class="cell-inner" style="color:var(--t2);font-size:11px">${l.email||'—'}</div></td>
+      <td><div class="cell-inner"><span style="font-size:10px;color:var(--t2)">${l.org||'—'}</span></div></td>
+      <td><div class="cell-inner"><span class="comp-badge ${stCls}">${stLabel}</span></div></td>
+      <td><div class="cell-inner">${certBtn}</div></td>
+      <td><div class="cell-inner">${dateField}</div></td>
+      <td><div class="cell-inner">
+        <textarea class="notes-input" rows="1"
+          placeholder="Add note…"
+          onblur="updateNotes('${l.id}', this.value)"
+          onfocus="this.rows=2"
+        >${getCert(l.id, activeModId).notes||''}</textarea>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CERT ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function toggleCert(learnerId) {
+  const cert = getCert(learnerId, activeModId);
+  if (cert.sent) {
+    // Undo — clear
+    setCert(learnerId, activeModId, { sent: false, date: '', notes: cert.notes });
+    showToast('↩', 'Certificate mark removed');
+  } else {
+    // Show date input first
+    const dateEl = document.getElementById('date_'+learnerId);
+    if (dateEl) {
+      dateEl.classList.add('visible');
+      if (!dateEl.value) dateEl.value = today();
+      dateEl.focus();
+      // When they pick a date or blur, commit
+      dateEl.onchange = e => {
+        setCert(learnerId, activeModId, { sent: true, date: e.target.value, notes: cert.notes });
+        renderRoster();
+        renderModuleHeader();
+        renderSidebar();
+        showToast('🏆', `Certificate marked sent`);
+      };
+      // If they just press Enter or click away without date, use today
+      dateEl.addEventListener('blur', function handler() {
+        if (!getCert(learnerId, activeModId).sent) {
+          setCert(learnerId, activeModId, { sent: true, date: dateEl.value||today(), notes: cert.notes });
+          renderRoster(); renderModuleHeader(); renderSidebar();
+          showToast('🏆', 'Certificate marked sent');
+        }
+        dateEl.removeEventListener('blur', handler);
+      }, {once:true});
+    }
+  }
+  renderRoster();
+  renderModuleHeader();
+  renderSidebar();
+}
+
+function updateDate(learnerId, date) {
+  const cert = getCert(learnerId, activeModId);
+  setCert(learnerId, activeModId, { ...cert, sent: true, date });
+  renderRoster(); renderModuleHeader(); renderSidebar();
+  showToast('📅', `Date updated to ${formatDisplayDate(date)}`);
+}
+
+function updateNotes(learnerId, notes) {
+  const cert = getCert(learnerId, activeModId);
+  setCert(learnerId, activeModId, { ...cert, notes });
+  save();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BATCH ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function batchMarkSent() {
+  const eligible = STATE.learners.filter(l =>
+    getModStatus(l, activeModId) === 'Done' && !getCert(l.id, activeModId).sent
+  );
+  if (!eligible.length) { showToast('✓', 'All eligible learners already have certs'); return; }
+  document.getElementById('batchMsg').textContent =
+    `This will mark ${eligible.length} learner${eligible.length!==1?'s':''} who completed this module as certificate sent.`;
+  document.getElementById('batchDate').value = today();
+  document.getElementById('batchModal').classList.remove('hidden');
+}
+
+function confirmBatch() {
+  const date = document.getElementById('batchDate').value || today();
+  const eligible = STATE.learners.filter(l =>
+    getModStatus(l, activeModId) === 'Done' && !getCert(l.id, activeModId).sent
+  );
+  eligible.forEach(l => {
+    const cert = getCert(l.id, activeModId);
+    setCert(l.id, activeModId, { ...cert, sent: true, date });
+  });
+  closeModal('batchModal');
+  renderRoster(); renderModuleHeader(); renderSidebar();
+  showToast('🏆', `${eligible.length} certificates marked sent`);
+}
+
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ADD / DELETE MODULE
+// ═══════════════════════════════════════════════════════════════════
+function openAddModule() {
+  document.getElementById('newModName').value = '';
+  document.getElementById('newModCourse').value = '';
+  document.getElementById('newModDate').value = today();
+  document.getElementById('addModuleModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('newModName').focus(), 50);
+}
+
+function addModule() {
+  const name = document.getElementById('newModName').value.trim();
+  const course = document.getElementById('newModCourse').value.trim();
+  const date = document.getElementById('newModDate').value;
+  if (!name) { document.getElementById('newModName').focus(); return; }
+  const id = 'mod_' + Date.now();
+  STATE.modules.push({ id, name, course, dateAdded: date, order: STATE.modules.length });
+  save();
+  closeModal('addModuleModal');
+  renderSidebar();
+  selectModule(id);
+  showToast('✓', `Module "${name}" added with ${STATE.learners.length} learners`);
+}
+
+function quickAddModule() {
+  const name = document.getElementById('quickModName').value.trim();
+  const course = document.getElementById('quickModCourse').value.trim();
+  if (!name) return;
+  const id = 'mod_' + Date.now();
+  STATE.modules.push({ id, name, course, dateAdded: today(), order: STATE.modules.length });
+  save();
+  document.getElementById('quickModName').value = '';
+  document.getElementById('quickModCourse').value = '';
+  renderSidebar();
+  selectModule(id);
+  showToast('✓', `Module "${name}" added`);
+}
+
+function deleteModule(modId) {
+  if (!confirm('Delete this module and all its certificate records?')) return;
+  STATE.modules = STATE.modules.filter(m => m.id !== modId);
+  // Remove cert records for this module
+  Object.keys(STATE.certs).forEach(k => { if (k.endsWith('__'+modId)) delete STATE.certs[k]; });
+  save();
+  if (activeModId === modId) {
+    activeModId = null;
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('rosterView').style.display = 'none';
+  }
+  renderSidebar();
+  showToast('✓', 'Module deleted');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ADD LEARNER
+// ═══════════════════════════════════════════════════════════════════
+function openAddLearner() {
+  ['newLName','newLEmail','newLOrg','newLNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addLearnerModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('newLName').focus(), 50);
+}
+
+function addLearner() {
+  const name = document.getElementById('newLName').value.trim();
+  const email = document.getElementById('newLEmail').value.trim();
+  const org = document.getElementById('newLOrg').value.trim();
+  const notes = document.getElementById('newLNotes').value.trim();
+  if (!name) { document.getElementById('newLName').focus(); return; }
+  const id = 'l_' + Date.now();
+  STATE.learners.push({
+    id, name, email, org, notes,
+    moduleStatuses: Object.fromEntries(STATE.modules.map(m => [m.id, 'Not Started'])),
+  });
+  save();
+  closeModal('addLearnerModal');
+  renderSidebar();
+  if (activeModId) renderRoster();
+  showToast('✓', `${name} added to all modules`);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════
+function today() { return new Date().toISOString().split('T')[0]; }
+function formatDisplayDate(d) {
+  if (!d) return '';
+  try {
+    const dt = new Date(d+'T00:00:00');
+    return dt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  } catch(e) { return d; }
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// Close modal on backdrop click
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if(e.target===bg) bg.classList.add('hidden'); });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-bg:not(.hidden)').forEach(m => m.classList.add('hidden'));
+});
+
+let toastTimer;
+function showToast(icon, msg) {
+  document.getElementById('tI').textContent = icon;
+  document.getElementById('tM').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EDIT LEARNER
+// ═══════════════════════════════════════════════════════════════════
+let editingLearnerId = null;
+
+function openEditLearner(learnerId) {
+  const l = STATE.learners.find(x => x.id === learnerId);
+  if (!l) return;
+  editingLearnerId = learnerId;
+
+  document.getElementById('editLearnerSub').textContent = `Editing: ${l.name}`;
+  document.getElementById('editLName').value = l.name || '';
+  document.getElementById('editLEmail').value = l.email || '';
+  document.getElementById('editLOrg').value = l.org || '';
+  document.getElementById('editLNotes').value = l.notes || '';
+
+  // Populate module picker with all current modules
+  const modPicker = document.getElementById('editModPicker');
+  modPicker.innerHTML = STATE.modules.map(m =>
+    `<option value="${m.id}">${m.name} — ${m.course || 'No title'}</option>`
+  ).join('');
+
+  // Set status picker to match the first module's current status
+  if (STATE.modules.length > 0) {
+    const firstStatus = l.moduleStatuses?.[STATE.modules[0].id] || 'Not Started';
+    document.getElementById('editStatusPicker').value = firstStatus;
+  }
+
+  document.getElementById('editLearnerModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('editLName').focus(), 50);
+}
+
+// Sync status picker when module selection changes
+function syncModStatus() {
+  const l = STATE.learners.find(x => x.id === editingLearnerId);
+  if (!l) return;
+  const modId = document.getElementById('editModPicker').value;
+  const current = l.moduleStatuses?.[modId] || 'Not Started';
+  document.getElementById('editStatusPicker').value = current;
+}
+
+function saveEditLearner() {
+  const l = STATE.learners.find(x => x.id === editingLearnerId);
+  if (!l) return;
+
+  const newName = document.getElementById('editLName').value.trim();
+  if (!newName) { document.getElementById('editLName').focus(); return; }
+
+  // Update basic fields
+  l.name  = newName;
+  l.email = document.getElementById('editLEmail').value.trim();
+  l.org   = document.getElementById('editLOrg').value.trim();
+  l.notes = document.getElementById('editLNotes').value.trim();
+
+  // Save the currently selected module's status
+  if (!l.moduleStatuses) l.moduleStatuses = {};
+  const modId = document.getElementById('editModPicker').value;
+  const status = document.getElementById('editStatusPicker').value;
+  if (modId) l.moduleStatuses[modId] = status;
+
+  save();
+  closeModal('editLearnerModal');
+  renderSidebar();
+  renderRoster();
+  renderModuleHeader();
+  showToast('✓', `${l.name} updated successfully`);
+}
+
+function deleteLearner() {
+  const l = STATE.learners.find(x => x.id === editingLearnerId);
+  if (!l) return;
+  if (!confirm(`Remove ${l.name} from all modules? This cannot be undone.`)) return;
+
+  STATE.learners = STATE.learners.filter(x => x.id !== editingLearnerId);
+  // Remove all cert records for this learner
+  Object.keys(STATE.certs).forEach(k => {
+    if (k.startsWith(editingLearnerId + '__')) delete STATE.certs[k];
+  });
+
+  save();
+  closeModal('editLearnerModal');
+  renderSidebar();
+  renderRoster();
+  renderModuleHeader();
+  showToast('✓', `${l.name} removed`);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TAB SWITCHER
+// ═══════════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  const isDash = tab === 'dash';
+  document.getElementById('dash-view').style.display = isDash ? 'block' : 'none';
+  document.getElementById('tracker-view').style.display = isDash ? 'none' : 'flex';
+  document.getElementById('tab-dash-btn').classList.toggle('active', isDash);
+  document.getElementById('tab-tracker-btn').classList.toggle('active', !isDash);
+  if (isDash) renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DASHBOARD RENDER
+// ═══════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const { modules, learners, certs } = STATE;
+
+  // ── Global stats ──
+  const totalLearners = learners.length;
+  const totalModules = modules.length;
+  const totalCertsSent = Object.values(certs).filter(c => c.sent).length;
+  const totalEligible = modules.reduce((sum, m) =>
+    sum + learners.filter(l => getModStatus(l, m.id) === 'Done').length, 0);
+  const totalNeedsCert = totalEligible - totalCertsSent;
+  const overallRate = totalEligible > 0 ? Math.round(totalCertsSent / totalEligible * 100) : 0;
+
+  // KPIs
+  document.getElementById('dash-kpis').innerHTML = `
+    <div class="dash-kpi k-sent">
+      <div class="dk-label">Certificates Sent</div>
+      <div class="dk-value">${totalCertsSent}</div>
+      <div class="dk-sub">Across all modules</div>
+    </div>
+    <div class="dash-kpi k-needs">
+      <div class="dk-label">Needs Certificate</div>
+      <div class="dk-value">${totalNeedsCert}</div>
+      <div class="dk-sub">Completed, not sent</div>
+    </div>
+    <div class="dash-kpi k-rate">
+      <div class="dk-label">Overall Sent Rate</div>
+      <div class="dk-value">${overallRate}%</div>
+      <div class="dk-bar"><div class="dk-bar-fill" style="width:${overallRate}%"></div></div>
+    </div>
+    <div class="dash-kpi k-learners">
+      <div class="dk-label">Total Learners</div>
+      <div class="dk-value">${totalLearners}</div>
+      <div class="dk-sub">In all rosters</div>
+    </div>
+    <div class="dash-kpi k-modules">
+      <div class="dk-label">Active Modules</div>
+      <div class="dk-value">${totalModules}</div>
+      <div class="dk-sub">Certificate tracks</div>
+    </div>
+    <div class="dash-kpi k-total">
+      <div class="dk-label">Total Eligible</div>
+      <div class="dk-value">${totalEligible}</div>
+      <div class="dk-sub">Completed a module</div>
+    </div>
+  `;
+
+  // ── Module scorecard ──
+  document.getElementById('dp-mod-subtitle').textContent = `${totalModules} module${totalModules !== 1 ? 's' : ''}`;
+  document.getElementById('dp-modules').innerHTML = modules.length === 0
+    ? '<div style="color:var(--mu);font-size:11px">No modules yet</div>'
+    : `<table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);padding:6px 8px;text-align:left;border-bottom:1px solid var(--b2);">Module</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Total</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--gr);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Completed</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--re);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Not Done</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--bl);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Completion %</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--pu);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Cert Sent</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ye);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Needs Cert</th>
+            <th style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);padding:6px 8px;text-align:center;border-bottom:1px solid var(--b2);">Cert Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${modules.map(m => {
+            const total = learners.length;
+            const done = learners.filter(l => getModStatus(l, m.id) === 'Done').length;
+            const notDone = learners.filter(l => {
+              const st = getModStatus(l, m.id);
+              return st !== 'Done' && st !== 'Off Boarded';
+            }).length;
+            const ob = learners.filter(l => getModStatus(l, m.id) === 'Off Boarded').length;
+            const active = total - ob;
+            const completionPct = active > 0 ? Math.round(done / active * 100) : 0;
+            const sent = learners.filter(l => getCert(l.id, m.id).sent).length;
+            const needsCert = done - sent;
+            const certRate = done > 0 ? Math.round(sent / done * 100) : 0;
+            const compColor = completionPct === 100 ? 'var(--gr)' : completionPct >= 75 ? 'var(--bl)' : completionPct >= 50 ? 'var(--ye)' : 'var(--re)';
+            const certColor = certRate === 100 ? 'var(--gr)' : certRate >= 75 ? 'var(--bl)' : certRate >= 50 ? 'var(--ye)' : 'var(--re)';
+            return `<tr style="cursor:pointer;" onclick="switchTab('tracker');selectModule('${m.id}')" title="Click to open this module">
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);">
+                <div style="font-size:11px;font-weight:600;color:var(--tx);">${m.name}</div>
+                <div style="font-size:10px;color:var(--t2);margin-top:1px;">${m.course || ''}</div>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;font-size:12px;color:var(--t2);">${active}</td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:var(--gr);">${done}</span>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:${notDone > 0 ? 'var(--re)' : 'var(--t3)'};">${notDone}</span>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                  <span style="font-size:13px;font-weight:700;color:${compColor};">${completionPct}%</span>
+                  <div style="width:60px;height:3px;background:var(--b2);border-radius:2px;overflow:hidden;">
+                    <div style="width:${completionPct}%;height:100%;background:${compColor};border-radius:2px;"></div>
+                  </div>
+                </div>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:var(--pu);">${sent}</span>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:${needsCert > 0 ? 'var(--ye)' : 'var(--gr)'};">${needsCert}</span>
+              </td>
+              <td style="padding:9px 8px;border-bottom:1px solid var(--b1);text-align:center;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                  <span style="font-size:13px;font-weight:700;color:${certColor};">${certRate}%</span>
+                  <div style="width:60px;height:3px;background:var(--b2);border-radius:2px;overflow:hidden;">
+                    <div style="width:${certRate}%;height:100%;background:${certColor};border-radius:2px;"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+
+  // ── Cert status overview panel ──
+  const totalSent = totalCertsSent;
+  const totalNeeds = totalNeedsCert;
+  const totalNS = modules.reduce((sum, m) =>
+    sum + learners.filter(l => getModStatus(l, m.id) === 'Not Started').length, 0);
+  const totalOB = modules.reduce((sum, m) =>
+    sum + learners.filter(l => getModStatus(l, m.id) === 'Off Boarded').length, 0);
+  const grandTotal = totalModules * totalLearners || 1;
+
+  const statusRows = [
+    { label: '🏆 Certificate Sent', count: totalSent, color: 'var(--pu)', pct: totalSent / grandTotal },
+    { label: '⚡ Needs Cert (module done)', count: totalNeeds, color: 'var(--ye)', pct: totalNeeds / grandTotal },
+    { label: 'Not Yet Started', count: totalNS, color: 'var(--t3)', pct: totalNS / grandTotal },
+    { label: 'Off Boarded', count: totalOB, color: '#4b5563', pct: totalOB / grandTotal },
+  ];
+  document.getElementById('dp-status').innerHTML = statusRows.map(r => `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b1);">
+      <div style="width:7px;height:7px;border-radius:50%;background:${r.color};flex-shrink:0"></div>
+      <div style="flex:1;font-size:11px;color:var(--t2)">${r.label}</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:${r.color};width:36px;text-align:right">${r.count}</div>
+      <div style="width:80px;height:4px;background:var(--b2);border-radius:2px;overflow:hidden;flex-shrink:0">
+        <div style="height:100%;width:${Math.round(r.pct*100)}%;background:${r.color};border-radius:2px"></div>
+      </div>
+      <div style="font-size:10px;color:var(--mu);width:28px;text-align:right">${Math.round(r.pct*100)}%</div>
+    </div>`).join('');
+
+  // ── By org table ──
+  const orgs = {};
+  learners.forEach(l => {
+    const org = l.org || 'Unknown';
+    if (!orgs[org]) orgs[org] = { total: 0, eligible: 0, sent: 0, needs: 0 };
+    orgs[org].total++;
+    modules.forEach(m => {
+      const st = getModStatus(l, m.id);
+      if (st === 'Done') {
+        orgs[org].eligible++;
+        if (getCert(l.id, m.id).sent) orgs[org].sent++;
+        else orgs[org].needs++;
+      }
+    });
+  });
+  const orgRows = Object.entries(orgs).sort((a, b) => b[1].eligible - a[1].eligible);
+  document.getElementById('dp-org-table').innerHTML =
+    `<thead><tr>
+      <th>Organization</th><th>Learners</th><th>Eligible</th>
+      <th>Cert Sent</th><th>Needs Cert</th><th>Sent Rate</th>
+    </tr></thead><tbody>` +
+    orgRows.map(([name, o]) => {
+      const rate = o.eligible > 0 ? Math.round(o.sent / o.eligible * 100) : 0;
+      const rc = rate >= 80 ? 'var(--gr)' : rate >= 50 ? 'var(--ye)' : 'var(--re)';
+      return `<tr>
+        <td style="font-weight:500;color:var(--tx)">${name}</td>
+        <td style="color:var(--t2)">${o.total}</td>
+        <td style="color:var(--gr);font-weight:600">${o.eligible}</td>
+        <td style="color:var(--pu);font-weight:600">${o.sent}</td>
+        <td style="color:var(--ye);font-weight:600">${o.needs}</td>
+        <td style="color:${rc};font-weight:600">${rate}%</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+
+  // ── Needs cert list ──
+  const needsList = [];
+  modules.forEach(m => {
+    learners.forEach(l => {
+      if (getModStatus(l, m.id) === 'Done' && !getCert(l.id, m.id).sent) {
+        needsList.push({ learner: l, module: m });
+      }
+    });
+  });
+  needsList.sort((a, b) => a.learner.name.localeCompare(b.learner.name));
+  document.getElementById('dp-needs-count').textContent = `${needsList.length} pending`;
+  document.getElementById('dp-needs').innerHTML = needsList.length === 0
+    ? '<div style="color:var(--gr);font-size:11px;padding:8px 0">🎉 All eligible learners have received their certificates!</div>'
+    : needsList.map(({ learner: l, module: m }) => `
+      <div class="needs-item">
+        <div style="flex:1;min-width:0">
+          <div class="ni-name">${l.name}</div>
+          ${l.email ? `<div class="ni-email">${l.email}</div>` : ''}
+        </div>
+        <span class="ni-mod">${m.name}</span>
+        <button class="ni-go" onclick="switchTab('tracker');selectModule('${m.id}')">Go →</button>
+      </div>`).join('');
+
+  // ── Recent activity ──
+  const recentCerts = Object.entries(certs)
+    .filter(([, c]) => c.sent && c.date)
+    .map(([key, c]) => {
+      const [lid, mid] = key.split('__');
+      const l = learners.find(x => x.id === lid);
+      const m = modules.find(x => x.id === mid);
+      return { name: l?.name || 'Unknown', module: m?.name || 'Unknown', date: c.date };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 15);
+
+  document.getElementById('dp-activity').innerHTML = recentCerts.length === 0
+    ? '<div style="color:var(--mu);font-size:11px">No certificates sent yet — mark some in the tracker!</div>'
+    : recentCerts.map(r => `
+      <div class="activity-item">
+        <div class="ai-dot"></div>
+        <div class="ai-text"><strong>${r.name}</strong> received cert for <span style="color:var(--ac2)">${r.module}</span></div>
+        <div class="ai-date">${formatDisplayDate(r.date)}</div>
+      </div>`).join('');
+}
+
+// ── Patch renderSidebar and renderRoster to refresh dashboard if open ──
+const _origSave = save;
+
+
+renderSidebar();
+// Auto-select first module
+if (STATE.modules.length > 0) selectModule(STATE.modules[0].id);
+</script>
+</body>
+</html>
