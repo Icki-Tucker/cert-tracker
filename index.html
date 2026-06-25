@@ -1377,79 +1377,67 @@ const _origSave = save;
 function exportToExcel() {
   const { modules, learners, certs } = STATE;
 
-  // Build one sheet per module + a summary sheet
-  let wb = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-  wb += '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
+  // Build CSV content for each sheet, then combine into a zip-based XLSX via SheetJS
+  // Load SheetJS dynamically if not already loaded
+  function doExport() {
+    const XLSX = window.XLSX;
 
-  // Sheet names
-  const sheetNames = ['Summary', ...modules.map(m => m.name.replace(/[\\/?*[\]]/g,'').substring(0,31))];
-  sheetNames.forEach(n => { wb += `<x:ExcelWorksheet><x:Name>${n}</x:Name><x:WorksheetOptions><x:Selected/></x:WorksheetOptions></x:ExcelWorksheet>`; });
-  wb += '</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+    const wb = XLSX.utils.book_new();
 
-  // ── Summary sheet ──
-  wb += '<table x:Sheet="Summary"><thead><tr>';
-  const summaryHeaders = ['Learner','Email','Organisation', ...modules.map(m => m.name), 'Total Certs Sent'];
-  summaryHeaders.forEach(h => wb += `<th style="background:#1c2030;color:#e2e8f0;font-weight:bold;border:1px solid #3a4060;padding:6px 10px">${h}</th>`);
-  wb += '</tr></thead><tbody>';
-  learners.forEach(l => {
-    let certCount = 0;
-    wb += '<tr>';
-    wb += `<td style="border:1px solid #ccc;padding:5px 8px">${l.name}</td>`;
-    wb += `<td style="border:1px solid #ccc;padding:5px 8px">${l.email||''}</td>`;
-    wb += `<td style="border:1px solid #ccc;padding:5px 8px">${l.org||''}</td>`;
-    modules.forEach(m => {
-      const cert = getCert(l.id, m.id);
-      const modSt = getModStatus(l, m.id);
-      let cellVal = modSt;
-      let bg = '';
-      if (cert.sent) { cellVal = `Cert Sent${cert.date ? ' — '+formatDisplayDate(cert.date) : ''}`; bg = 'background:#d1fae5;'; certCount++; }
-      else if (modSt === 'Done') { cellVal = 'Done — No Cert'; bg = 'background:#fef3c7;'; }
-      else if (modSt === 'WIP') bg = 'background:#ede9fe;';
-      else if (modSt === 'Off Boarded') bg = 'background:#f3f4f6;color:#9ca3af;';
-      wb += `<td style="border:1px solid #ccc;padding:5px 8px;${bg}">${cellVal}</td>`;
-    });
-    wb += `<td style="border:1px solid #ccc;padding:5px 8px;text-align:center;font-weight:bold">${certCount}</td>`;
-    wb += '</tr>';
-  });
-  wb += '</tbody></table>';
-
-  // ── One sheet per module ──
-  modules.forEach(m => {
-    const sheetName = m.name.replace(/[\\/?*[\]]/g,'').substring(0,31);
-    wb += `<table x:Sheet="${sheetName}"><thead><tr>`;
-    ['Learner','Email','Organisation','Module Status','Cert Sent?','Date Sent','Notes'].forEach(h =>
-      wb += `<th style="background:#1c2030;color:#e2e8f0;font-weight:bold;border:1px solid #3a4060;padding:6px 10px">${h}</th>`
-    );
-    wb += '</tr></thead><tbody>';
+    // ── Summary sheet ──
+    const summaryHeaders = ['Learner','Email','Organisation', ...modules.map(m => m.name), 'Total Certs Sent'];
+    const summaryRows = [summaryHeaders];
     learners.forEach(l => {
-      const cert = getCert(l.id, m.id);
-      const modSt = getModStatus(l, m.id);
-      const sentBg = cert.sent ? 'background:#d1fae5;' : modSt==='Done' ? 'background:#fef3c7;' : '';
-      wb += `<tr>
-        <td style="border:1px solid #ccc;padding:5px 8px">${l.name}</td>
-        <td style="border:1px solid #ccc;padding:5px 8px">${l.email||''}</td>
-        <td style="border:1px solid #ccc;padding:5px 8px">${l.org||''}</td>
-        <td style="border:1px solid #ccc;padding:5px 8px">${modSt}</td>
-        <td style="border:1px solid #ccc;padding:5px 8px;${sentBg}">${cert.sent ? '✓ Yes' : 'No'}</td>
-        <td style="border:1px solid #ccc;padding:5px 8px">${cert.date ? formatDisplayDate(cert.date) : ''}</td>
-        <td style="border:1px solid #ccc;padding:5px 8px">${cert.notes||''}</td>
-      </tr>`;
+      let certCount = 0;
+      const row = [l.name, l.email||'', l.org||''];
+      modules.forEach(m => {
+        const cert = getCert(l.id, m.id);
+        const modSt = getModStatus(l, m.id);
+        if (cert.sent) { row.push(`Cert Sent${cert.date ? ' - '+formatDisplayDate(cert.date) : ''}`); certCount++; }
+        else if (modSt === 'Done') row.push('Done - No Cert');
+        else row.push(modSt);
+      });
+      row.push(certCount);
+      summaryRows.push(row);
     });
-    wb += '</tbody></table>';
-  });
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
 
-  wb += '</body></html>';
+    // ── One sheet per module ──
+    modules.forEach(m => {
+      const headers = ['Learner','Email','Organisation','Module Status','Cert Sent?','Date Sent','Notes'];
+      const rows = [headers];
+      learners.forEach(l => {
+        const cert = getCert(l.id, m.id);
+        const modSt = getModStatus(l, m.id);
+        rows.push([
+          l.name,
+          l.email||'',
+          l.org||'',
+          modSt,
+          cert.sent ? 'Yes' : 'No',
+          cert.date ? formatDisplayDate(cert.date) : '',
+          cert.notes||''
+        ]);
+      });
+      const sheetName = m.name.replace(/[\\/?*[\]:]/g,'').substring(0,31);
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
 
-  const blob = new Blob([wb], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cert-tracker-export-${today()}.xls`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('📊', 'Excel file downloaded!');
+    XLSX.writeFile(wb, `cert-tracker-export-${today()}.xlsx`);
+    showToast('📊', `Excel downloaded — ${learners.length} learners, ${modules.length} modules`);
+  }
+
+  if (window.XLSX) {
+    doExport();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = doExport;
+    script.onerror = () => showToast('❌', 'Could not load export library — check your connection');
+    document.head.appendChild(script);
+  }
 }
 
 function copyEmail(email, event) {
