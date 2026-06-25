@@ -4,6 +4,86 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Certificate Tracker — AI Learning Series 2026</title>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FIREBASE CONFIG — paste your config here after registering
+     the web app in Firebase Console (Project settings → Your apps)
+     ═══════════════════════════════════════════════════════════════ -->
+<script type="module">
+// ┌─────────────────────────────────────────────────────────────────┐
+// │  STEP 1: Paste your firebaseConfig object below                 │
+// │  Get it from: Firebase Console → ⚙ Project settings →          │
+// │  Your apps → </> → copy the firebaseConfig block               │
+// └─────────────────────────────────────────────────────────────────┘
+const firebaseConfig = {
+  apiKey: "AIzaSyD2fe4bwJ0g0CnRt3a9zBSSTr4IdOu61H0",
+  authDomain: "cert-tracker-3203f.firebaseapp.com",
+  projectId: "cert-tracker-3203f",
+  storageBucket: "cert-tracker-3203f.firebasestorage.app",
+  messagingSenderId: "350293933369",
+  appId: "1:350293933369:web:fea508f2531b799ffcfce8"
+};
+
+// ── Firebase imports ──────────────────────────────────────────────
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Init ──────────────────────────────────────────────────────────
+const IS_CONFIGURED = !firebaseConfig.apiKey.includes('PASTE_YOUR');
+let db = null;
+let unsubscribe = null;
+
+if (IS_CONFIGURED) {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+}
+
+// ── Firestore doc reference ───────────────────────────────────────
+// All data lives in a single Firestore document: certTracker/main
+const FIRESTORE_DOC = () => doc(db, 'certTracker', 'main');
+const STORE_KEY = 'certTracker_v3'; // kept for migration only
+
+// ── Expose to global scope (needed by non-module script below) ────
+window._fb = {
+  IS_CONFIGURED,
+  db,
+  FIRESTORE_DOC,
+  STORE_KEY,
+  loadFromFirestore: async () => {
+    if (!IS_CONFIGURED || !db) return null;
+    try {
+      const snap = await getDoc(FIRESTORE_DOC());
+      return snap.exists() ? snap.data() : null;
+    } catch(e) {
+      console.error('Firestore read failed:', e);
+      return null;
+    }
+  },
+  saveToFirestore: async (state) => {
+    if (!IS_CONFIGURED || !db) return;
+    try {
+      await setDoc(FIRESTORE_DOC(), state);
+    } catch(e) {
+      console.error('Firestore write failed:', e);
+      window._fbSaveError = true;
+    }
+  },
+  subscribeToChanges: (callback) => {
+    if (!IS_CONFIGURED || !db) return;
+    if (unsubscribe) unsubscribe();
+    unsubscribe = onSnapshot(FIRESTORE_DOC(), (snap) => {
+      if (snap.exists()) callback(snap.data());
+    });
+  }
+};
+
+// Signal that Firebase module has loaded
+window._fbReady = true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 :root {
@@ -44,6 +124,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 .badge-ac{background:var(--ac3);color:var(--ac2);border:1px solid rgba(108,99,255,.25);}
 .pulse{width:5px;height:5px;background:var(--ac);border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
+
+/* ── SYNC STATUS ── */
+.sync-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;cursor:default;}
+.sync-live{background:rgba(34,211,160,.12);border:1px solid rgba(34,211,160,.3);color:var(--gr);}
+.sync-saving{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--ye);}
+.sync-offline{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--re);}
+.sync-local{background:var(--s2);border:1px solid var(--b2);color:var(--mu);}
+.sync-dot{width:5px;height:5px;border-radius:50%;}
+.sync-live .sync-dot{background:var(--gr);animation:pulse 2s infinite;}
+.sync-saving .sync-dot{background:var(--ye);}
+.sync-offline .sync-dot{background:var(--re);}
+.sync-local .sync-dot{background:var(--mu);}
+
+/* ── MIGRATION MODAL ── */
+.migrate-box{background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:14px;margin:12px 0;font-size:11px;color:var(--t2);line-height:1.6;}
+.migrate-box strong{color:var(--tx);}
+.migrate-step{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);}
+.migrate-step:last-child{border:none;}
+.ms-num{width:18px;height:18px;border-radius:50%;background:var(--ac3);color:var(--ac2);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.migrate-result{margin-top:10px;padding:10px;border-radius:6px;font-size:11px;display:none;}
+.mr-ok{background:rgba(34,211,160,.1);border:1px solid rgba(34,211,160,.3);color:var(--gr);}
+.mr-err{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--re);}
 
 /* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden;}
@@ -353,10 +455,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   </div>
   <div class="topbar-right">
     <div class="topbar-stat" id="globalStat">Loading…</div>
+    <div class="sync-badge sync-local" id="syncBadge" title="Firebase sync status"><div class="sync-dot"></div><span id="syncLabel">Local only</span></div>
     <button class="btn btn-ghost" onclick="exportToExcel()">⬇ Export Excel</button>
+    <button class="btn btn-ghost" id="migrateBtn" onclick="openMigrateModal()" style="display:none" title="Migrate your existing localStorage data to Firebase">☁ Migrate to Cloud</button>
     <button class="btn btn-ghost" onclick="openAddLearner()">+ Add Learner</button>
     <button class="btn btn-primary" onclick="openAddModule()">+ Add Module</button>
-    <div class="badge badge-ac"><div class="pulse"></div>Auto-saved</div>
   </div>
 </div>
 
@@ -570,6 +673,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="tI"></span><span id="tM"></span></div>
 
+<!-- MIGRATE TO FIREBASE MODAL -->
+<div class="modal-bg hidden" id="migrateModal">
+  <div class="modal modal-wide">
+    <h3>☁ Migrate to Firebase</h3>
+    <p>Your current cert data is saved locally in this browser. This will copy it to Firebase Firestore so it's shared in real time across all devices.</p>
+    <div class="migrate-box">
+      <div class="migrate-step">
+        <div class="ms-num">1</div>
+        <div>Found <strong id="migrateFoundSummary">checking…</strong> in your browser's localStorage</div>
+      </div>
+      <div class="migrate-step">
+        <div class="ms-num">2</div>
+        <div>This data will be <strong>uploaded to Firestore</strong> — any existing Firestore data will be <strong style="color:var(--re)">overwritten</strong></div>
+      </div>
+      <div class="migrate-step">
+        <div class="ms-num">3</div>
+        <div>After migration, all future saves go to Firebase automatically. Your localStorage is kept as a backup.</div>
+      </div>
+    </div>
+    <div class="migrate-result" id="migrateResult"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('migrateModal')">Cancel</button>
+      <button class="btn btn-green" id="migrateConfirmBtn" onclick="runMigration()">⬆ Upload to Firebase</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════
 // PREFILLED DATA — 109 learners + 6 modules from Excel files
@@ -577,75 +707,193 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 const PREFILL = {"learners": [{"id": "96", "name": "Aiko Logmao", "email": "aiko.juanitas@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_116", "name": "Aileen Jane Espanol", "email": "ajespanol28@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "43", "name": "Aldrina Martin Dacalanio", "email": "aldrina102406@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "90", "name": "Alfredo II Magdalera", "email": "pilipinaspride08@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "62", "name": "Allysa Angela Romero", "email": "ahrie.romero@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_117", "name": "Alyssa Gloria Acosta", "email": "ally.montano.acosta@gmail.com", "org": "Aven", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "85", "name": "Andrei Pierre Natividad", "email": "shikuchi7@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "97", "name": "Angelo Aggabao", "email": "angelopaggabao@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "8", "name": "Angelo Francis Mendoza", "email": "angelo.francis.mendoza@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "50", "name": "Anna Rose Carungay", "email": "annarosecarungay@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_113", "name": "Annabelle Bersabe", "email": "aanne78@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "51", "name": "Annabelle Veraces", "email": "annabelleveraces@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "106", "name": "April Santos", "email": "aprilagotana.santos@gmail.com", "org": "Nimali3", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "44", "name": "Armando Miguel Jr Samia", "email": "migosamia@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "68", "name": "Audrey Vaughn Tolentino", "email": "bonbomb1@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "67", "name": "Bernadette Pablo", "email": "bernadette.diazpablo@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "86", "name": "Bonnie Carlo Balais", "email": "carlo_balais15@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "34", "name": "Bryan Russell Quejayco Jr", "email": "briehq@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "22", "name": "Carlo Benjamin Ferrer", "email": "carloferrer07@myyahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "49", "name": "Carlos Macabenta III", "email": "carlmacabentz05@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "100", "name": "Chaiya Cerise Roces-Pontillas", "email": "chaiya.roces07@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "54", "name": "Chariza Caharian", "email": "chaza2008@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "65", "name": "Charlene Casasis", "email": "charlenecasasis@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "58", "name": "Charmaine Buno-Garcia", "email": "charmainebuno@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "9", "name": "Christian Cocharo", "email": "x3mexian@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "3", "name": "Clairol Sagaysay", "email": "clairolsagaysay@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "105", "name": "Claudette Obligado", "email": "claudettetalledo@gmail.com", "org": "Rivington Company", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "66", "name": "Dan Gandhi Pascua", "email": "gandhipascua@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "18", "name": "Dandy Dela Pena", "email": "junomole@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "15", "name": "Dane Marc Villanueva", "email": "dmavillanueva@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "25", "name": "Daniel Griff Arellano", "email": "arellanodanielgriff@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "1", "name": "Deo Magat", "email": "deomagat@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "28", "name": "Diane Oliveros", "email": "deeeoliveros17@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "73", "name": "Edrian Baylon", "email": "edbaylon21@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "27", "name": "Eliezer Paredes", "email": "zryprds@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "39", "name": "Ella Prima Edradan", "email": "elpriedra89@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "104", "name": "Elyza Duldulao", "email": "elyzaduldulao03@gmail.com", "org": "Nimali3", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "103", "name": "Frances Denice De Guzman", "email": "denicevstheinternet@gmail.com", "org": "Shortcake Albums", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "87", "name": "Geelenn Calalang", "email": "geelenncalalang@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "23", "name": "Glorica Avila", "email": "ricaavila230@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "40", "name": "Henry De Vera", "email": "henrypdevera.eyt@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "74", "name": "Hershey Matining", "email": "hersheymatining@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "12", "name": "Jarryd John Perez", "email": "perezjarrydjohn@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "76", "name": "Jeffrey Jimenez", "email": "jeffreypjimenez@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "l_m_118", "name": "Jemma Lynn Chua", "email": "jemmachua@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "88", "name": "Jeneth Santiago", "email": "santiago.jeneth1985@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "81", "name": "Jenina Kloie Crisologo", "email": "crisologojenina@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "102", "name": "Jennifer Camille Blancaflor", "email": "jennifercamilleblancaflor@gmail.com", "org": "Sun Acquisitions", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "14", "name": "Jennylyn Dacara", "email": "dacarajen@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "24", "name": "Jerica Marie Camacho", "email": "camacho.jm.313@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "30", "name": "Jermie Libungan", "email": "jlibungan@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "42", "name": "Jessa Herrera", "email": "jessajoyramelherrera@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "36", "name": "Johannes Alfredo David Abion", "email": "jabion1026@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "37", "name": "John Carlo Bejona", "email": "johncarloinprogress@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_114", "name": "John Yancy Evangelista", "email": "johnyancy.evangelista@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "91", "name": "Joseph Mar S. Garduce", "email": "gadhou13@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "21", "name": "Jowie-Ann Alejandro", "email": "jowieannalejandro@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "57", "name": "Joyce Christine Enriquez", "email": "joycechristineenriquez@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "41", "name": "Julie Ann Gemal-Cari\u00f1o", "email": "julieanngemal@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "79", "name": "Julius Christian Braza", "email": "juliuschristianbraza@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "13", "name": "Justine Eraldo", "email": "justeraldo1997@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "92", "name": "Katrina Dianne Barribal", "email": "barribaldana@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "84", "name": "Keith Cueto", "email": "kdcfrancisco@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_115", "name": "Kyle Jumayne Francisco", "email": "franciscokyle.kf@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "33", "name": "Lady Rose Munalem", "email": "munalem.ladyrosec@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "11", "name": "Ma. Angelica Altavano", "email": "maangelica.altavano@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "46", "name": "Ma. Divina Balane", "email": "balanedivine09@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "61", "name": "Ma. Renelda Santos", "email": "marensantos@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "69", "name": "Mara Mae Catanduanes", "email": "virtualmara28@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "38", "name": "Maribeth Alcantara", "email": "maribethalcantara08@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "6", "name": "Maricon Javier", "email": "maricon.javier@hotmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "93", "name": "Marjorie Jane Lodo", "email": "mjllodo@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "45", "name": "Mary Jane Angeles", "email": "mjangeles0876@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "72", "name": "Mary Krisna Jumarang", "email": "krismjumarang@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "83", "name": "Mary Michelle Villanera", "email": "mitchvillanera@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "94", "name": "Mhyra Luz Baguna", "email": "mhyrabaguna@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "32", "name": "Michael Lorenz Nicosia", "email": "michaellorenznicosia@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "107", "name": "Michelle Austria", "email": "michelleaustria0907@yahoo.com", "org": "Infillion", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "55", "name": "Michelle Eleonor Malazzab", "email": "michelleeleonormalazzab@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "82", "name": "Michelle Manipol Mesias", "email": "manipolmichelle24@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "99", "name": "Mohamad Marwan Burhani", "email": "mburhani@ualberta.ca", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "89", "name": "Nancy Dionisio", "email": "nance_rd@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "109", "name": "Nathaniel Silvestre", "email": "nathanslv13@gmail.com", "org": "Infillion", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "77", "name": "Neil Churchill Ani\u00f1on", "email": "neilchillo@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "7", "name": "Neil Shane Napoles", "email": "neilshanepili@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_119", "name": "Ni\u00f1o Generyll Barbosa", "email": "veronikageneryll@gmail.com", "org": "Aven", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "108", "name": "Pauline Anne Mariz Miguel", "email": "paulinemiguel08@gmail.com", "org": "Liberty Home Mortgage", "modules": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}}, {"id": "60", "name": "Pearl Grace Fetalcorin", "email": "pearl.fetalcorin@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "63", "name": "Phoebe Rose Quicho", "email": "eurekaleigh1730@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "WIP"}}, {"id": "47", "name": "Pinky Torres", "email": "pinkytorres032092@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_112", "name": "Princess Hermae Moronio-Magura", "email": "princess.hermae@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "95", "name": "Rainer Maalik Mercado", "email": "maalik.mercado@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "10", "name": "Reena Joy Galecio", "email": "reena_2989@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "75", "name": "Reign Mina", "email": "smreign@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "71", "name": "Riah Rosales", "email": "riah.rosales24@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "20", "name": "Rizzelle Jea Factes", "email": "ellefactes@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "31", "name": "Roby Pacoma", "email": "robypacoma@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_110", "name": "Romar Macaraeg", "email": "mc.romar00@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "70", "name": "Romnic Carias", "email": "romnic_carias@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "48", "name": "Ronin Marquez", "email": "roninmarkus@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "59", "name": "Rose Pearly Sandig", "email": "rpearl.vasquez@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "80", "name": "Ruth May Tolentino", "email": "ruthmay.tolentino@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "4", "name": "Sarah Mae Melgar", "email": "sarahmaemelgar@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_120", "name": "Ser John Vincent Romarate", "email": "sjvinz@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "29", "name": "Shaira Mae Ringor", "email": "sayson.shaimae@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_111", "name": "Shayne Valencia", "email": "shayne.r.valencia@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "98", "name": "Sheila Cristinor", "email": "sheilaqc19@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "35", "name": "Sherwin Amparo", "email": "samparo0925@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "19", "name": "Shirley Ann Sibangan", "email": "sasibangan@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "26", "name": "Vanissa Evangelista", "email": "vanissaevangelista3030@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "56", "name": "Venus Lyn Fernandez", "email": "venus_fernandez2000@yahoo.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "l_m_121", "name": "Victoria Lumpias", "email": "victoria.lumpias@gmail.com", "org": "Extend Your Team", "moduleStatuses": {"mod_1": "Not Started", "mod_2": "Not Started", "mod_3": "Not Started", "mod_4": "Not Started", "mod_5": "Not Started", "mod_6": "Not Started"}, "notes": ""}, {"id": "64", "name": "Vivian Malinao", "email": "vivi.malinao@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "17", "name": "Wilfredo Ociones", "email": "wilfredo.ocionesfa@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Not Started"}}, {"id": "5", "name": "Xeleena Jordan Acosta", "email": "eenajoe.acosta@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}, {"id": "78", "name": "Zela Shane Flores", "email": "floreszelashane@gmail.com", "org": "Aven", "modules": {"mod_1": "Done", "mod_2": "Done", "mod_3": "Done", "mod_4": "Done", "mod_5": "Done", "mod_6": "Done"}}], "modules": [["AI Module 1", "AI For Everyone"], ["AI Module 2", "Workflow Automation using Generative AI"], ["AI Module 3", "Prompt Engineering for ChatGPT"], ["AI Module 4", "Start Writing Prompts Like a Pro"], ["AI Module 5", "Prompts for Everyday Work Tasks"], ["AI Module 6", "Speed Up Data Analysis and Presentation Building"]]};
 
 // ═══════════════════════════════════════════════════════════════════
-// STATE — load from localStorage or seed from prefill
+// STATE — Firebase + localStorage fallback
 // ═══════════════════════════════════════════════════════════════════
 const STORE_KEY = 'certTracker_v3';
 
-function loadState() {
-  // Build the fresh seed from PREFILL
+// ── Sync status UI ────────────────────────────────────────────────
+function setSyncStatus(status) {
+  // status: 'live' | 'saving' | 'offline' | 'local'
+  const badge = document.getElementById('syncBadge');
+  const label = document.getElementById('syncLabel');
+  if (!badge) return;
+  badge.className = 'sync-badge sync-' + status;
+  const labels = { live: '🔴 Live sync', saving: 'Saving…', offline: 'Offline', local: 'Local only' };
+  label.textContent = labels[status] || status;
+}
+
+// ── Build fresh seed from PREFILL ────────────────────────────────
+function buildFreshState() {
   const freshModules = PREFILL.modules.map((m, i) => ({
-    id: `mod_${i+1}`,
-    name: m[0],
-    course: m[1],
-    dateAdded: new Date().toISOString().split('T')[0],
-    order: i,
+    id: `mod_${i+1}`, name: m[0], course: m[1],
+    dateAdded: new Date().toISOString().split('T')[0], order: i,
   }));
   const freshLearners = PREFILL.learners.map(l => ({
-    id: l.id,
-    name: l.name,
-    email: l.email,
-    org: l.org || 'Aven',
-    moduleStatuses: l.modules,
-    notes: '',
+    id: l.id, name: l.name, email: l.email,
+    org: l.org || 'Aven', moduleStatuses: l.modules, notes: '',
   }));
+  return { modules: freshModules, learners: freshLearners, certs: {} };
+}
 
-  // Try to load saved state
+// ── Merge saved + prefill (ensure no one is missing) ─────────────
+function mergeWithPrefill(saved) {
+  const freshLearners = PREFILL.learners.map(l => ({
+    id: l.id, name: l.name, email: l.email,
+    org: l.org || 'Aven', moduleStatuses: l.modules, notes: '',
+  }));
+  const savedIds    = new Set(saved.learners.map(l => l.id));
+  const savedEmails = new Set(saved.learners.map(l => (l.email||'').toLowerCase()).filter(Boolean));
+  freshLearners.forEach(fl => {
+    if (!savedIds.has(fl.id) && !(fl.email && savedEmails.has(fl.email.toLowerCase()))) {
+      saved.learners.push(fl);
+    }
+  });
+  freshLearners.forEach(fl => {
+    const match = saved.learners.find(sl =>
+      sl.id === fl.id || (fl.email && sl.email && fl.email.toLowerCase() === sl.email.toLowerCase())
+    );
+    if (match) { match.name = fl.name; match.email = fl.email; match.org = fl.org; }
+  });
+  saved.learners.sort((a, b) => a.name.localeCompare(b.name));
+  return saved;
+}
+
+// ── Load state (async — tries Firebase first, then localStorage) ──
+async function loadState() {
+  const fb = window._fb;
+
+  // Try Firebase
+  if (fb && fb.IS_CONFIGURED) {
+    try {
+      setSyncStatus('saving');
+      const remote = await fb.loadFromFirestore();
+      if (remote) {
+        setSyncStatus('live');
+        subscribeToRemoteChanges();
+        return mergeWithPrefill(remote);
+      }
+      // Firebase connected but empty — use localStorage or fresh seed
+      setSyncStatus('live');
+    } catch(e) {
+      setSyncStatus('offline');
+      console.warn('Firebase unavailable, falling back to localStorage:', e);
+    }
+  } else {
+    setSyncStatus('local');
+    // Show migration button if there's localStorage data and Firebase is configured
+    if (fb && fb.IS_CONFIGURED) {
+      const btn = document.getElementById('migrateBtn');
+      if (btn) btn.style.display = '';
+    }
+  }
+
+  // Fall back to localStorage
   let saved = null;
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) saved = JSON.parse(raw);
   } catch(e) {}
 
-  // No saved state — use fresh seed
-  if (!saved) return { modules: freshModules, learners: freshLearners, certs: {} };
-
-  // Saved state exists — merge: add any PREFILL learners not already saved
-  // This ensures new people added to PREFILL always appear even if localStorage is stale
-  const savedIds   = new Set(saved.learners.map(l => l.id));
-  const savedEmails = new Set(saved.learners.map(l => (l.email||'').toLowerCase()).filter(Boolean));
-
-  freshLearners.forEach(fl => {
-    const alreadyById    = savedIds.has(fl.id);
-    const alreadyByEmail = fl.email && savedEmails.has(fl.email.toLowerCase());
-    if (!alreadyById && !alreadyByEmail) {
-      saved.learners.push(fl);
-    }
-  });
-
-  // Also sync updated names/emails/orgs from PREFILL into saved records
-  freshLearners.forEach(fl => {
-    const match = saved.learners.find(sl =>
-      sl.id === fl.id ||
-      (fl.email && sl.email && fl.email.toLowerCase() === sl.email.toLowerCase())
-    );
-    if (match) {
-      match.name  = fl.name;
-      match.email = fl.email;
-      match.org   = fl.org;
-    }
-  });
-
-  // Sort learners alphabetically
-  saved.learners.sort((a, b) => a.name.localeCompare(b.name));
-
-  return saved;
+  if (!saved) return buildFreshState();
+  return mergeWithPrefill(saved);
 }
 
-let STATE = loadState();
+// ── Subscribe to live Firestore updates ──────────────────────────
+let _lastSaveTime = 0;
 
+function subscribeToRemoteChanges() {
+  const fb = window._fb;
+  if (!fb || !fb.IS_CONFIGURED) return;
+  fb.subscribeToChanges((remoteData) => {
+    // Ignore changes that fired immediately after our own save
+    if (Date.now() - _lastSaveTime < 2000) return;
+    STATE = mergeWithPrefill(remoteData);
+    renderSidebar();
+    if (activeModId) { renderModuleHeader(); renderRoster(); }
+    setSyncStatus('live');
+  });
+}
+
+let STATE = buildFreshState(); // will be replaced by async init below
+
+// ── Save ──────────────────────────────────────────────────────────
 function save() {
+  // Always keep localStorage as a backup
   try { localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); } catch(e) {}
+
+  // Save to Firestore if configured
+  const fb = window._fb;
+  if (fb && fb.IS_CONFIGURED) {
+    setSyncStatus('saving');
+    _lastSaveTime = Date.now();
+    fb.saveToFirestore(STATE).then(() => {
+      setSyncStatus('live');
+    }).catch(() => {
+      setSyncStatus('offline');
+    });
+  }
 }
+
+// ── Migration helpers ─────────────────────────────────────────────
+function openMigrateModal() {
+  const raw = localStorage.getItem(STORE_KEY);
+  let summary = 'no localStorage data found';
+  if (raw) {
+    try {
+      const d = JSON.parse(raw);
+      const certCount = Object.values(d.certs||{}).filter(c=>c.sent).length;
+      summary = `<strong>${(d.learners||[]).length} learners</strong>, <strong>${(d.modules||[]).length} modules</strong>, <strong>${certCount} certs sent</strong>`;
+    } catch(e) { summary = 'data (could not parse count)'; }
+  }
+  document.getElementById('migrateFoundSummary').innerHTML = summary;
+  document.getElementById('migrateResult').style.display = 'none';
+  document.getElementById('migrateConfirmBtn').disabled = false;
+  document.getElementById('migrateModal').classList.remove('hidden');
+}
+
+async function runMigration() {
+  const btn = document.getElementById('migrateConfirmBtn');
+  const result = document.getElementById('migrateResult');
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+  result.style.display = 'none';
+
+  try {
+    const fb = window._fb;
+    if (!fb || !fb.IS_CONFIGURED) throw new Error('Firebase not configured');
+    await fb.saveToFirestore(STATE);
+    _lastSaveTime = Date.now();
+    result.className = 'migrate-result mr-ok';
+    result.textContent = '✓ Migration complete! Your data is now in Firebase. All future saves will go directly to Firestore.';
+    result.style.display = 'block';
+    setSyncStatus('live');
+    subscribeToRemoteChanges();
+    document.getElementById('migrateBtn').style.display = 'none';
+    btn.textContent = 'Done ✓';
+  } catch(e) {
+    result.className = 'migrate-result mr-err';
+    result.textContent = `✕ Migration failed: ${e.message}. Check that your firebaseConfig is correct and Firestore is enabled.`;
+    result.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '⬆ Try Again';
+  }
+}
+
+// ── Async init: replace STATE once Firebase/localStorage resolves ──
+async function initApp() {
+  const fb = window._fb;
+  const hasLocalData = !!localStorage.getItem(STORE_KEY);
+
+  // If Firebase is configured, show migrate button if local data exists
+  if (fb && fb.IS_CONFIGURED && hasLocalData) {
+    document.getElementById('migrateBtn').style.display = '';
+  }
+
+  STATE = await loadState();
+  renderSidebar();
+  if (STATE.modules.length > 0) selectModule(STATE.modules[0].id);
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // ACTIVE MODULE & FILTERS
@@ -1367,9 +1615,6 @@ function renderDashboard() {
       </div>`).join('');
 }
 
-// ── Patch renderSidebar and renderRoster to refresh dashboard if open ──
-const _origSave = save;
-
 
 // ═══════════════════════════════════════════════════════════════════
 // EXCEL EXPORT
@@ -1457,9 +1702,23 @@ function copyEmail(email, event) {
   });
 }
 
-renderSidebar();
-// Auto-select first module
-if (STATE.modules.length > 0) selectModule(STATE.modules[0].id);
+// ── Start the app (waits for Firebase module to signal ready) ─────
+function startApp() {
+  if (window._fbReady || !document.querySelector('script[type="module"]')) {
+    initApp();
+  } else {
+    window.addEventListener('fbReady', initApp, { once: true });
+    // Fallback: if module never fires (e.g. no internet), init after 3s
+    setTimeout(() => { if (!window._appStarted) initApp(); }, 3000);
+  }
+}
+window._appStarted = false;
+const _origInitApp = initApp;
+window.initApp = async function() {
+  window._appStarted = true;
+  return _origInitApp();
+};
+startApp();
 </script>
 </body>
 </html>
