@@ -353,6 +353,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   </div>
   <div class="topbar-right">
     <div class="topbar-stat" id="globalStat">Loading…</div>
+    <button class="btn btn-ghost" onclick="exportToExcel()">⬇ Export Excel</button>
     <button class="btn btn-ghost" onclick="openAddLearner()">+ Add Learner</button>
     <button class="btn btn-primary" onclick="openAddModule()">+ Add Module</button>
     <div class="badge badge-ac"><div class="pulse"></div>Auto-saved</div>
@@ -833,10 +834,10 @@ function renderRoster() {
           <div class="l-name">${l.name}</div>
           <button class="edit-btn" onclick="openEditLearner('${l.id}')" title="Edit learner">✏ Edit</button>
         </div>
-        ${l.email ? `<div class="l-email">${l.email}</div>` : `<div class="l-email" style="color:var(--b3);font-style:italic">No email</div>`}
+
         ${l.org ? `<span class="l-org">${l.org}</span>` : ''}
       </div></td>
-      <td><div class="cell-inner" style="color:var(--t2);font-size:11px">${l.email||'—'}</div></td>
+      <td><div class="cell-inner" style="display:flex;align-items:center;gap:5px;color:var(--t2);font-size:11px">${l.email||'—'}${l.email ? `<button onclick="copyEmail('${l.email}',event)" title="Copy email" style="background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;color:var(--t3);font-size:11px;line-height:1;flex-shrink:0;" onmouseover="this.style.color='var(--ac2)'" onmouseout="this.style.color='var(--t3)'">⧉</button>` : ''}</div></td>
       <td><div class="cell-inner"><span style="font-size:10px;color:var(--t2)">${l.org||'—'}</span></div></td>
       <td><div class="cell-inner"><span class="comp-badge ${stCls}">${stLabel}</span></div></td>
       <td><div class="cell-inner">${certBtn}</div></td>
@@ -861,35 +862,24 @@ function toggleCert(learnerId) {
     // Undo — clear
     setCert(learnerId, activeModId, { sent: false, date: '', notes: cert.notes });
     showToast('↩', 'Certificate mark removed');
+    renderRoster(); renderModuleHeader(); renderSidebar();
   } else {
-    // Show date input first
+    // Immediately mark as sent with today's date, then re-render so button updates right away
+    const date = today();
+    setCert(learnerId, activeModId, { sent: true, date, notes: cert.notes });
+    renderRoster(); renderModuleHeader(); renderSidebar();
+    showToast('🏆', 'Certificate marked sent');
+    // Let user optionally change the date via the now-visible date input
     const dateEl = document.getElementById('date_'+learnerId);
     if (dateEl) {
-      dateEl.classList.add('visible');
-      if (!dateEl.value) dateEl.value = today();
-      dateEl.focus();
-      // When they pick a date or blur, commit
       dateEl.onchange = e => {
-        setCert(learnerId, activeModId, { sent: true, date: e.target.value, notes: cert.notes });
-        renderRoster();
-        renderModuleHeader();
-        renderSidebar();
-        showToast('🏆', `Certificate marked sent`);
+        const c = getCert(learnerId, activeModId);
+        setCert(learnerId, activeModId, { ...c, date: e.target.value });
+        renderRoster(); renderModuleHeader(); renderSidebar();
+        showToast('📅', `Date updated to ${formatDisplayDate(e.target.value)}`);
       };
-      // If they just press Enter or click away without date, use today
-      dateEl.addEventListener('blur', function handler() {
-        if (!getCert(learnerId, activeModId).sent) {
-          setCert(learnerId, activeModId, { sent: true, date: dateEl.value||today(), notes: cert.notes });
-          renderRoster(); renderModuleHeader(); renderSidebar();
-          showToast('🏆', 'Certificate marked sent');
-        }
-        dateEl.removeEventListener('blur', handler);
-      }, {once:true});
     }
   }
-  renderRoster();
-  renderModuleHeader();
-  renderSidebar();
 }
 
 function updateDate(learnerId, date) {
@@ -1380,6 +1370,104 @@ function renderDashboard() {
 // ── Patch renderSidebar and renderRoster to refresh dashboard if open ──
 const _origSave = save;
 
+
+// ═══════════════════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function exportToExcel() {
+  const { modules, learners, certs } = STATE;
+
+  // Build one sheet per module + a summary sheet
+  let wb = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+  wb += '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>';
+
+  // Sheet names
+  const sheetNames = ['Summary', ...modules.map(m => m.name.replace(/[\\/?*[\]]/g,'').substring(0,31))];
+  sheetNames.forEach(n => { wb += `<x:ExcelWorksheet><x:Name>${n}</x:Name><x:WorksheetOptions><x:Selected/></x:WorksheetOptions></x:ExcelWorksheet>`; });
+  wb += '</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>';
+
+  // ── Summary sheet ──
+  wb += '<table x:Sheet="Summary"><thead><tr>';
+  const summaryHeaders = ['Learner','Email','Organisation', ...modules.map(m => m.name), 'Total Certs Sent'];
+  summaryHeaders.forEach(h => wb += `<th style="background:#1c2030;color:#e2e8f0;font-weight:bold;border:1px solid #3a4060;padding:6px 10px">${h}</th>`);
+  wb += '</tr></thead><tbody>';
+  learners.forEach(l => {
+    let certCount = 0;
+    wb += '<tr>';
+    wb += `<td style="border:1px solid #ccc;padding:5px 8px">${l.name}</td>`;
+    wb += `<td style="border:1px solid #ccc;padding:5px 8px">${l.email||''}</td>`;
+    wb += `<td style="border:1px solid #ccc;padding:5px 8px">${l.org||''}</td>`;
+    modules.forEach(m => {
+      const cert = getCert(l.id, m.id);
+      const modSt = getModStatus(l, m.id);
+      let cellVal = modSt;
+      let bg = '';
+      if (cert.sent) { cellVal = `Cert Sent${cert.date ? ' — '+formatDisplayDate(cert.date) : ''}`; bg = 'background:#d1fae5;'; certCount++; }
+      else if (modSt === 'Done') { cellVal = 'Done — No Cert'; bg = 'background:#fef3c7;'; }
+      else if (modSt === 'WIP') bg = 'background:#ede9fe;';
+      else if (modSt === 'Off Boarded') bg = 'background:#f3f4f6;color:#9ca3af;';
+      wb += `<td style="border:1px solid #ccc;padding:5px 8px;${bg}">${cellVal}</td>`;
+    });
+    wb += `<td style="border:1px solid #ccc;padding:5px 8px;text-align:center;font-weight:bold">${certCount}</td>`;
+    wb += '</tr>';
+  });
+  wb += '</tbody></table>';
+
+  // ── One sheet per module ──
+  modules.forEach(m => {
+    const sheetName = m.name.replace(/[\\/?*[\]]/g,'').substring(0,31);
+    wb += `<table x:Sheet="${sheetName}"><thead><tr>`;
+    ['Learner','Email','Organisation','Module Status','Cert Sent?','Date Sent','Notes'].forEach(h =>
+      wb += `<th style="background:#1c2030;color:#e2e8f0;font-weight:bold;border:1px solid #3a4060;padding:6px 10px">${h}</th>`
+    );
+    wb += '</tr></thead><tbody>';
+    learners.forEach(l => {
+      const cert = getCert(l.id, m.id);
+      const modSt = getModStatus(l, m.id);
+      const sentBg = cert.sent ? 'background:#d1fae5;' : modSt==='Done' ? 'background:#fef3c7;' : '';
+      wb += `<tr>
+        <td style="border:1px solid #ccc;padding:5px 8px">${l.name}</td>
+        <td style="border:1px solid #ccc;padding:5px 8px">${l.email||''}</td>
+        <td style="border:1px solid #ccc;padding:5px 8px">${l.org||''}</td>
+        <td style="border:1px solid #ccc;padding:5px 8px">${modSt}</td>
+        <td style="border:1px solid #ccc;padding:5px 8px;${sentBg}">${cert.sent ? '✓ Yes' : 'No'}</td>
+        <td style="border:1px solid #ccc;padding:5px 8px">${cert.date ? formatDisplayDate(cert.date) : ''}</td>
+        <td style="border:1px solid #ccc;padding:5px 8px">${cert.notes||''}</td>
+      </tr>`;
+    });
+    wb += '</tbody></table>';
+  });
+
+  wb += '</body></html>';
+
+  const blob = new Blob([wb], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cert-tracker-export-${today()}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('📊', 'Excel file downloaded!');
+}
+
+function copyEmail(email, event) {
+  event.stopPropagation();
+  navigator.clipboard.writeText(email).then(() => {
+    showToast('📋', `Copied: ${email}`);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = email;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋', `Copied: ${email}`);
+  });
+}
 
 renderSidebar();
 // Auto-select first module
