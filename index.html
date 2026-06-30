@@ -254,34 +254,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--b3);}
 
-/* ── ORG ACCORDION ── */
-.acc-row{border-bottom:1px solid var(--b1);}
-.acc-row:last-child{border-bottom:none;}
-.acc-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .15s;user-select:none;}
-.acc-header:hover{background:rgba(108,99,255,.04);}
-.acc-arrow{font-size:9px;color:var(--mu);transition:transform .2s;flex-shrink:0;width:12px;}
-.acc-arrow.open{transform:rotate(90deg);}
-.acc-mod-info{flex:1;min-width:0;}
-.acc-mod-name{font-size:12px;font-weight:600;color:var(--tx);}
-.acc-mod-course{font-size:10px;color:var(--t2);margin-top:1px;}
-.acc-summary{display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;}
-.acc-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
-.acc-pill-comp{background:var(--gr2);color:var(--gr);}
-.acc-pill-cert{background:var(--pu2);color:var(--pu);}
-.acc-pill-needs{background:var(--ye2);color:var(--ye);}
-.acc-body{display:none;padding:0 16px 14px 38px;}
-.acc-body.open{display:block;}
-.acc-org-table{width:100%;border-collapse:collapse;}
-.acc-org-table th{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);padding:6px 10px;text-align:left;border-bottom:1px solid var(--b2);white-space:nowrap;}
-.acc-org-table th.num{text-align:center;}
-.acc-org-table td{font-size:11px;padding:8px 10px;border-bottom:1px solid rgba(37,42,58,.4);vertical-align:middle;}
-.acc-org-table tr:last-child td{border-bottom:none;}
-.acc-org-table tr:hover td{background:rgba(108,99,255,.03);}
-.acc-rate-cell{display:flex;align-items:center;gap:6px;}
-.acc-rate-val{font-size:11px;font-weight:700;width:34px;flex-shrink:0;}
-.acc-rate-bar{flex:1;max-width:80px;height:4px;background:var(--b2);border-radius:2px;overflow:hidden;}
-.acc-rate-fill{height:100%;border-radius:2px;}
-
 /* Sortable headers */
 .sortable{cursor:pointer;user-select:none;}
 .sortable:hover{color:var(--t2);}
@@ -381,6 +353,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   </div>
   <div class="topbar-right">
     <div class="topbar-stat" id="globalStat">Loading…</div>
+    <button class="btn btn-ghost" onclick="exportToExcel()">⬇ Export Excel</button>
     <button class="btn btn-ghost" onclick="openAddLearner()">+ Add Learner</button>
     <button class="btn btn-primary" onclick="openAddModule()">+ Add Module</button>
     <div class="badge badge-ac"><div class="pulse"></div>Auto-saved</div>
@@ -398,26 +371,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="dash-kpis" id="dash-kpis"></div>
   <div style="margin-bottom:16px;">
     <div class="dash-panel">
-      <div class="dp-hdr">
-        <div class="dp-title">📊 Module Scorecard</div>
-        <span id="dp-mod-subtitle" style="font-size:10px;color:var(--mu)"></span>
-      </div>
+      <div class="dp-hdr"><div class="dp-title">📊 Module Scorecard</div><span id="dp-mod-subtitle" style="font-size:10px;color:var(--mu)"></span></div>
       <div style="overflow-x:auto;"><div class="dp-body" id="dp-modules"></div></div>
-    </div>
-  </div>
-
-  <!-- ORG BREAKDOWN ACCORDION -->
-  <div style="margin-bottom:16px;">
-    <div class="dash-panel">
-      <div class="dp-hdr">
-        <div class="dp-title">🏢 Completion &amp; Cert Rate by Org per Module</div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <span id="dp-acc-subtitle" style="font-size:10px;color:var(--mu)"></span>
-          <button onclick="expandAllAccordion()" style="background:var(--s2);border:1px solid var(--b2);border-radius:5px;padding:3px 8px;font-size:9px;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;">Expand All</button>
-          <button onclick="collapseAllAccordion()" style="background:var(--s2);border:1px solid var(--b2);border-radius:5px;padding:3px 8px;font-size:9px;color:var(--t2);cursor:pointer;font-family:'Inter',sans-serif;">Collapse All</button>
-        </div>
-      </div>
-      <div id="dp-accordion"></div>
     </div>
   </div>
   <div style="margin-bottom:16px;">
@@ -879,10 +834,10 @@ function renderRoster() {
           <div class="l-name">${l.name}</div>
           <button class="edit-btn" onclick="openEditLearner('${l.id}')" title="Edit learner">✏ Edit</button>
         </div>
-        ${l.email ? `<div class="l-email">${l.email}</div>` : `<div class="l-email" style="color:var(--b3);font-style:italic">No email</div>`}
+
         ${l.org ? `<span class="l-org">${l.org}</span>` : ''}
       </div></td>
-      <td><div class="cell-inner" style="color:var(--t2);font-size:11px">${l.email||'—'}</div></td>
+      <td><div class="cell-inner" style="display:flex;align-items:center;gap:5px;color:var(--t2);font-size:11px">${l.email||'—'}${l.email ? `<button onclick="copyEmail('${l.email}',event)" title="Copy email" style="background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;color:var(--t3);font-size:11px;line-height:1;flex-shrink:0;" onmouseover="this.style.color='var(--ac2)'" onmouseout="this.style.color='var(--t3)'">⧉</button>` : ''}</div></td>
       <td><div class="cell-inner"><span style="font-size:10px;color:var(--t2)">${l.org||'—'}</span></div></td>
       <td><div class="cell-inner"><span class="comp-badge ${stCls}">${stLabel}</span></div></td>
       <td><div class="cell-inner">${certBtn}</div></td>
@@ -907,35 +862,24 @@ function toggleCert(learnerId) {
     // Undo — clear
     setCert(learnerId, activeModId, { sent: false, date: '', notes: cert.notes });
     showToast('↩', 'Certificate mark removed');
+    renderRoster(); renderModuleHeader(); renderSidebar();
   } else {
-    // Show date input first
+    // Immediately mark as sent with today's date, then re-render so button updates right away
+    const date = today();
+    setCert(learnerId, activeModId, { sent: true, date, notes: cert.notes });
+    renderRoster(); renderModuleHeader(); renderSidebar();
+    showToast('🏆', 'Certificate marked sent');
+    // Let user optionally change the date via the now-visible date input
     const dateEl = document.getElementById('date_'+learnerId);
     if (dateEl) {
-      dateEl.classList.add('visible');
-      if (!dateEl.value) dateEl.value = today();
-      dateEl.focus();
-      // When they pick a date or blur, commit
       dateEl.onchange = e => {
-        setCert(learnerId, activeModId, { sent: true, date: e.target.value, notes: cert.notes });
-        renderRoster();
-        renderModuleHeader();
-        renderSidebar();
-        showToast('🏆', `Certificate marked sent`);
+        const c = getCert(learnerId, activeModId);
+        setCert(learnerId, activeModId, { ...c, date: e.target.value });
+        renderRoster(); renderModuleHeader(); renderSidebar();
+        showToast('📅', `Date updated to ${formatDisplayDate(e.target.value)}`);
       };
-      // If they just press Enter or click away without date, use today
-      dateEl.addEventListener('blur', function handler() {
-        if (!getCert(learnerId, activeModId).sent) {
-          setCert(learnerId, activeModId, { sent: true, date: dateEl.value||today(), notes: cert.notes });
-          renderRoster(); renderModuleHeader(); renderSidebar();
-          showToast('🏆', 'Certificate marked sent');
-        }
-        dateEl.removeEventListener('blur', handler);
-      }, {once:true});
     }
   }
-  renderRoster();
-  renderModuleHeader();
-  renderSidebar();
 }
 
 function updateDate(learnerId, date) {
@@ -1318,88 +1262,6 @@ function renderDashboard() {
         </tbody>
       </table>`;
 
-  // ── Org breakdown accordion ──
-  document.getElementById('dp-acc-subtitle').textContent =
-    `${totalModules} module${totalModules !== 1 ? 's' : ''} · click to expand`;
-
-  // Build org list from learners (auto-discovers new orgs)
-  const allOrgs = [...new Set(learners.map(l => l.org || 'Unknown'))].sort();
-
-  document.getElementById('dp-accordion').innerHTML = modules.map((m, idx) => {
-    // Module-level totals
-    const ob      = learners.filter(l => getModStatus(l, m.id) === 'Off Boarded').length;
-    const active  = learners.length - ob;
-    const done    = learners.filter(l => getModStatus(l, m.id) === 'Done').length;
-    const sent    = learners.filter(l => getCert(l.id, m.id).sent).length;
-    const needs   = done - sent;
-    const compPct = active > 0 ? Math.round(done / active * 100) : 0;
-    const certPct = done  > 0 ? Math.round(sent / done  * 100) : 0;
-
-    // Per-org rows
-    const orgRows = allOrgs.map(org => {
-      const orgL    = learners.filter(l => (l.org || 'Unknown') === org);
-      const orgOb   = orgL.filter(l => getModStatus(l, m.id) === 'Off Boarded').length;
-      const orgAct  = orgL.length - orgOb;
-      const orgDone = orgL.filter(l => getModStatus(l, m.id) === 'Done').length;
-      const orgSent = orgL.filter(l => getCert(l.id, m.id).sent).length;
-      const orgNeed = orgDone - orgSent;
-      const orgComp = orgAct  > 0 ? Math.round(orgDone / orgAct  * 100) : 0;
-      const orgCert = orgDone > 0 ? Math.round(orgSent / orgDone * 100) : 0;
-      const compCol = orgComp === 100 ? 'var(--gr)' : orgComp >= 75 ? 'var(--bl)' : orgComp >= 50 ? 'var(--ye)' : 'var(--re)';
-      const certCol = orgCert === 100 ? 'var(--gr)' : orgCert >= 75 ? 'var(--bl)' : orgCert >= 50 ? 'var(--ye)' : 'var(--re)';
-      return `<tr>
-        <td style="font-weight:500;color:var(--tx)">${org}</td>
-        <td style="text-align:center;color:var(--t2)">${orgL.length}</td>
-        <td style="text-align:center;color:var(--gr);font-weight:600">${orgDone}</td>
-        <td style="text-align:center;color:var(--re);font-weight:600">${orgAct - orgDone}</td>
-        <td>
-          <div class="acc-rate-cell">
-            <span class="acc-rate-val" style="color:${compCol}">${orgComp}%</span>
-            <div class="acc-rate-bar"><div class="acc-rate-fill" style="width:${orgComp}%;background:${compCol}"></div></div>
-          </div>
-        </td>
-        <td style="text-align:center;color:var(--pu);font-weight:600">${orgSent}</td>
-        <td style="text-align:center;color:${orgNeed > 0 ? 'var(--ye)' : 'var(--gr)'};font-weight:600">${orgNeed}</td>
-        <td>
-          <div class="acc-rate-cell">
-            <span class="acc-rate-val" style="color:${certCol}">${orgCert}%</span>
-            <div class="acc-rate-bar"><div class="acc-rate-fill" style="width:${orgCert}%;background:${certCol}"></div></div>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-
-    return `<div class="acc-row" id="acc-row-${idx}">
-      <div class="acc-header" onclick="toggleAccordion(${idx})">
-        <span class="acc-arrow" id="acc-arr-${idx}">▶</span>
-        <div class="acc-mod-info">
-          <div class="acc-mod-name">${m.name}</div>
-          <div class="acc-mod-course">${m.course || ''}</div>
-        </div>
-        <div class="acc-summary">
-          <span class="acc-pill acc-pill-comp">✓ ${compPct}% done</span>
-          <span class="acc-pill acc-pill-cert">🏆 ${certPct}% cert sent</span>
-          ${needs > 0 ? `<span class="acc-pill acc-pill-needs">⚡ ${needs} need cert</span>` : ''}
-        </div>
-      </div>
-      <div class="acc-body" id="acc-body-${idx}">
-        <table class="acc-org-table">
-          <thead><tr>
-            <th>Organization</th>
-            <th class="num">Learners</th>
-            <th class="num">Done</th>
-            <th class="num">Not Done</th>
-            <th>Completion Rate</th>
-            <th class="num">Cert Sent</th>
-            <th class="num">Needs Cert</th>
-            <th>Cert Rate</th>
-          </tr></thead>
-          <tbody>${orgRows}</tbody>
-        </table>
-      </div>
-    </div>`;
-  }).join('') || '<div style="padding:14px 16px;color:var(--mu);font-size:11px">No modules yet</div>';
-
   // ── Cert status overview panel ──
   const totalSent = totalCertsSent;
   const totalNeeds = totalNeedsCert;
@@ -1508,25 +1370,92 @@ function renderDashboard() {
 // ── Patch renderSidebar and renderRoster to refresh dashboard if open ──
 const _origSave = save;
 
-function toggleAccordion(idx) {
-  const body = document.getElementById('acc-body-'+idx);
-  const arr  = document.getElementById('acc-arr-'+idx);
-  if (!body) return;
-  const isOpen = body.classList.contains('open');
-  body.classList.toggle('open', !isOpen);
-  arr.classList.toggle('open', !isOpen);
+
+// ═══════════════════════════════════════════════════════════════════
+// EXCEL EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function exportToExcel() {
+  const { modules, learners, certs } = STATE;
+
+  // Build CSV content for each sheet, then combine into a zip-based XLSX via SheetJS
+  // Load SheetJS dynamically if not already loaded
+  function doExport() {
+    const XLSX = window.XLSX;
+
+    const wb = XLSX.utils.book_new();
+
+    // ── Summary sheet ──
+    const summaryHeaders = ['Learner','Email','Organisation', ...modules.map(m => m.name), 'Total Certs Sent'];
+    const summaryRows = [summaryHeaders];
+    learners.forEach(l => {
+      let certCount = 0;
+      const row = [l.name, l.email||'', l.org||''];
+      modules.forEach(m => {
+        const cert = getCert(l.id, m.id);
+        const modSt = getModStatus(l, m.id);
+        if (cert.sent) { row.push(`Cert Sent${cert.date ? ' - '+formatDisplayDate(cert.date) : ''}`); certCount++; }
+        else if (modSt === 'Done') row.push('Done - No Cert');
+        else row.push(modSt);
+      });
+      row.push(certCount);
+      summaryRows.push(row);
+    });
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+
+    // ── One sheet per module ──
+    modules.forEach(m => {
+      const headers = ['Learner','Email','Organisation','Module Status','Cert Sent?','Date Sent','Notes'];
+      const rows = [headers];
+      learners.forEach(l => {
+        const cert = getCert(l.id, m.id);
+        const modSt = getModStatus(l, m.id);
+        rows.push([
+          l.name,
+          l.email||'',
+          l.org||'',
+          modSt,
+          cert.sent ? 'Yes' : 'No',
+          cert.date ? formatDisplayDate(cert.date) : '',
+          cert.notes||''
+        ]);
+      });
+      const sheetName = m.name.replace(/[\\/?*[\]:]/g,'').substring(0,31);
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+
+    XLSX.writeFile(wb, `cert-tracker-export-${today()}.xlsx`);
+    showToast('📊', `Excel downloaded — ${learners.length} learners, ${modules.length} modules`);
+  }
+
+  if (window.XLSX) {
+    doExport();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = doExport;
+    script.onerror = () => showToast('❌', 'Could not load export library — check your connection');
+    document.head.appendChild(script);
+  }
 }
 
-function expandAllAccordion() {
-  document.querySelectorAll('.acc-body').forEach(b => b.classList.add('open'));
-  document.querySelectorAll('.acc-arrow').forEach(a => a.classList.add('open'));
+function copyEmail(email, event) {
+  event.stopPropagation();
+  navigator.clipboard.writeText(email).then(() => {
+    showToast('📋', `Copied: ${email}`);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = email;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋', `Copied: ${email}`);
+  });
 }
-
-function collapseAllAccordion() {
-  document.querySelectorAll('.acc-body').forEach(b => b.classList.remove('open'));
-  document.querySelectorAll('.acc-arrow').forEach(a => a.classList.remove('open'));
-}
-
 
 renderSidebar();
 // Auto-select first module
