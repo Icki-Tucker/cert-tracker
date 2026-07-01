@@ -552,20 +552,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
       <div class="form-group full">
         <label>Module Completion Status</label>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-          <select id="editModPicker" class="mod-dd" style="flex:1" onchange="syncModStatus()"></select>
+          <span id="editModName" style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:7px;padding:8px 11px;font-size:12px;color:var(--t2);">—</span>
           <span style="font-size:13px;color:var(--t3);flex-shrink:0;">→</span>
           <select id="editStatusPicker" class="mod-dd" style="max-width:160px">
             <option value="Done">Done</option>
-            <option value="WIP">WIP</option>
             <option value="Not Started">Not Started</option>
-            <option value="Off Boarded">Off Boarded</option>
+            <option value="Scheduled">Scheduled</option>
           </select>
         </div>
-        <p style="font-size:10px;color:var(--t3);margin-top:8px;">Select a module then set its status. Changes are saved when you click Save Changes.</p>
+        <p style="font-size:10px;color:var(--t3);margin-top:8px;">This updates status for the module you're currently viewing. Changes are saved when you click Save Changes.</p>
       </div>
     </div>
     <div class="modal-actions" style="justify-content:space-between;">
-      <button class="btn btn-danger" onclick="openDeleteLearner(editingLearnerId)">🗑 Remove Learner</button>
+      <button class="btn btn-danger" onclick="openDeleteLearner(editingLearnerId, editingModuleId)">🗑 Remove Learner</button>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost" onclick="closeModal('editLearnerModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveEditLearner()">Save Changes</button>
@@ -872,7 +871,7 @@ function renderRoster() {
     const isSent = cert.sent;
     const isOB = modSt === 'Off Boarded';
 
-    const stCls = modSt==='Done'?'cb-done':modSt==='WIP'?'cb-wip':modSt==='Off Boarded'?'cb-ob':'cb-ns';
+    const stCls = modSt==='Done'?'cb-done':(modSt==='Scheduled'||modSt==='WIP')?'cb-wip':modSt==='Off Boarded'?'cb-ob':'cb-ns';
     const stLabel = modSt==='Not Started'?'Not Started':modSt;
 
     const certBtn = isOB ? '<span style="font-size:10px;color:var(--t3)">Off Boarded</span>' :
@@ -900,7 +899,7 @@ function renderRoster() {
           <div class="l-name">${l.name}</div>
           <button class="edit-btn" onclick="openEditLearner('${l.id}')" title="Edit learner">✏ Edit</button>
           ${modSt === 'Done' ? `<button class="edit-btn" onclick="generateOne('${l.id}')" title="Generate this learner's certificate PDF">⬇ Generate</button>` : ''}
-          <button class="edit-btn" style="color:var(--re)" onclick="openDeleteLearner('${l.id}')" title="Delete learner">🗑 Delete</button>
+          <button onclick="copyName('${l.name.replace(/'/g,"\\'")}',event)" title="Copy name" style="background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;color:var(--t3);font-size:11px;line-height:1;flex-shrink:0;" onmouseover="this.style.color='var(--ac2)'" onmouseout="this.style.color='var(--t3)'">⧉</button>
         </div>
 
         ${l.org ? `<span class="l-org">${l.org}</span>` : ''}
@@ -1114,11 +1113,13 @@ function showToast(icon, msg) {
 // EDIT LEARNER
 // ═══════════════════════════════════════════════════════════════════
 let editingLearnerId = null;
+let editingModuleId = null;
 
 function openEditLearner(learnerId) {
   const l = STATE.learners.find(x => x.id === learnerId);
   if (!l) return;
   editingLearnerId = learnerId;
+  editingModuleId = activeModId;
 
   document.getElementById('editLearnerSub').textContent = `Editing: ${l.name}`;
   document.getElementById('editLName').value = l.name || '';
@@ -1126,29 +1127,15 @@ function openEditLearner(learnerId) {
   document.getElementById('editLOrg').value = l.org || '';
   document.getElementById('editLNotes').value = l.notes || '';
 
-  // Populate module picker with all current modules
-  const modPicker = document.getElementById('editModPicker');
-  modPicker.innerHTML = STATE.modules.map(m =>
-    `<option value="${m.id}">${m.name} — ${m.course || 'No title'}</option>`
-  ).join('');
-
-  // Set status picker to match the first module's current status
-  if (STATE.modules.length > 0) {
-    const firstStatus = l.moduleStatuses?.[STATE.modules[0].id] || 'Not Started';
-    document.getElementById('editStatusPicker').value = firstStatus;
-  }
+  // Status is always for the module currently being viewed
+  const mod = STATE.modules.find(m => m.id === editingModuleId);
+  document.getElementById('editModName').textContent = mod ? `${mod.name} — ${mod.course || 'No title'}` : 'No module selected';
+  const current = l.moduleStatuses?.[editingModuleId] || 'Not Started';
+  document.getElementById('editStatusPicker').value = current;
+  document.getElementById('editStatusPicker').disabled = !mod;
 
   document.getElementById('editLearnerModal').classList.remove('hidden');
   setTimeout(() => document.getElementById('editLName').focus(), 50);
-}
-
-// Sync status picker when module selection changes
-function syncModStatus() {
-  const l = STATE.learners.find(x => x.id === editingLearnerId);
-  if (!l) return;
-  const modId = document.getElementById('editModPicker').value;
-  const current = l.moduleStatuses?.[modId] || 'Not Started';
-  document.getElementById('editStatusPicker').value = current;
 }
 
 function saveEditLearner() {
@@ -1164,11 +1151,10 @@ function saveEditLearner() {
   l.org   = document.getElementById('editLOrg').value.trim();
   l.notes = document.getElementById('editLNotes').value.trim();
 
-  // Save the currently selected module's status
+  // Save status for the module currently being viewed
   if (!l.moduleStatuses) l.moduleStatuses = {};
-  const modId = document.getElementById('editModPicker').value;
   const status = document.getElementById('editStatusPicker').value;
-  if (modId) l.moduleStatuses[modId] = status;
+  if (editingModuleId) l.moduleStatuses[editingModuleId] = status;
 
   save();
   closeModal('editLearnerModal');
@@ -1182,32 +1168,37 @@ function saveEditLearner() {
 // DELETE LEARNER — choose to remove from this module only, or everywhere
 // ═══════════════════════════════════════════════════════════════════
 let pendingDeleteLearnerId = null;
+let pendingDeleteModuleId = null;
 
-function openDeleteLearner(learnerId) {
+function openDeleteLearner(learnerId, moduleId) {
   const l = STATE.learners.find(x => x.id === learnerId);
   if (!l) return;
   pendingDeleteLearnerId = learnerId;
-  const mod = STATE.modules.find(m => m.id === activeModId);
+  pendingDeleteModuleId = moduleId || activeModId;
+  const mod = STATE.modules.find(m => m.id === pendingDeleteModuleId);
   document.getElementById('deleteLearnerMsg').textContent = mod
     ? `Remove ${l.name} from "${mod.name}" only, or delete them from the entire tracker (all modules)? This cannot be undone.`
     : `Delete ${l.name} from the entire tracker (all modules)? This cannot be undone.`;
   document.getElementById('deleteLearnerThisModBtn').style.display = mod ? '' : 'none';
+  document.getElementById('deleteLearnerThisModBtn').textContent = mod ? `Remove from "${mod.name}" only` : 'Remove from this module only';
   document.getElementById('deleteLearnerModal').classList.remove('hidden');
 }
 
 function deleteFromThisModule() {
   const l = STATE.learners.find(x => x.id === pendingDeleteLearnerId);
-  if (!l || !activeModId) { closeModal('deleteLearnerModal'); return; }
-  if (l.moduleStatuses) delete l.moduleStatuses[activeModId];
-  if (l.moduleDates) delete l.moduleDates[activeModId];
-  delete STATE.certs[certKey(l.id, activeModId)];
-  if (STATE.certNumbers) delete STATE.certNumbers[certKey(l.id, activeModId)];
+  const modId = pendingDeleteModuleId;
+  if (!l || !modId) { closeModal('deleteLearnerModal'); return; }
+  if (l.moduleStatuses) delete l.moduleStatuses[modId];
+  if (l.moduleDates) delete l.moduleDates[modId];
+  delete STATE.certs[certKey(l.id, modId)];
+  if (STATE.certNumbers) delete STATE.certNumbers[certKey(l.id, modId)];
   save();
   closeModal('deleteLearnerModal');
   closeModal('editLearnerModal');
   renderSidebar(); renderRoster(); renderModuleHeader();
   showToast('🗑', `${l.name} removed from this module`);
   pendingDeleteLearnerId = null;
+  pendingDeleteModuleId = null;
 }
 
 function deleteFromAllModules() {
@@ -1222,6 +1213,7 @@ function deleteFromAllModules() {
   renderSidebar(); renderRoster(); renderModuleHeader(); renderGlobalStat();
   showToast('🗑', `${l.name} deleted from all modules`);
   pendingDeleteLearnerId = null;
+  pendingDeleteModuleId = null;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1549,6 +1541,23 @@ function copyEmail(email, event) {
     document.execCommand('copy');
     document.body.removeChild(ta);
     showToast('📋', `Copied: ${email}`);
+  });
+}
+
+function copyName(name, event) {
+  event.stopPropagation();
+  navigator.clipboard.writeText(name).then(() => {
+    showToast('📋', `Copied: ${name}`);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = name;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋', `Copied: ${name}`);
   });
 }
 
