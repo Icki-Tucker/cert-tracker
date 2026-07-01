@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EYT Training Tracker & Certificate Generator</title>
+<title>Certificate Tracker — AI Learning Series 2026</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 :root {
@@ -1089,12 +1089,14 @@ function formatDisplayDate(d) {
 
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-// Close modal on backdrop click
+// Close modal on backdrop click (Manual Certificate is excluded — it's a longer form,
+// so an accidental outside click shouldn't wipe out what's been typed)
 document.querySelectorAll('.modal-bg').forEach(bg => {
+  if (bg.id === 'manualCertModal') return;
   bg.addEventListener('click', e => { if(e.target===bg) bg.classList.add('hidden'); });
 });
 
-// Keyboard shortcuts
+// Keyboard shortcuts (Escape still closes everything, including Manual Certificate, on purpose)
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-bg:not(.hidden)').forEach(m => m.classList.add('hidden'));
 });
