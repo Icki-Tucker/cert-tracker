@@ -565,11 +565,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-hei
       </div>
     </div>
     <div class="modal-actions" style="justify-content:space-between;">
-      <button class="btn btn-danger" onclick="deleteLearner()">🗑 Remove Learner</button>
+      <button class="btn btn-danger" onclick="openDeleteLearner(editingLearnerId)">🗑 Remove Learner</button>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost" onclick="closeModal('editLearnerModal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveEditLearner()">Save Changes</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE LEARNER MODAL -->
+<div class="modal-bg hidden" id="deleteLearnerModal">
+  <div class="modal modal-wide">
+    <h3>Delete Learner</h3>
+    <p id="deleteLearnerMsg">Remove this learner?</p>
+    <div class="modal-actions" style="justify-content:flex-end;flex-wrap:wrap;row-gap:8px;">
+      <button class="btn btn-ghost" onclick="closeModal('deleteLearnerModal')">Cancel</button>
+      <button class="btn btn-ghost" id="deleteLearnerThisModBtn" onclick="deleteFromThisModule()">Remove from this module only</button>
+      <button class="btn btn-danger" onclick="deleteFromAllModules()">Delete from all modules</button>
     </div>
   </div>
 </div>
@@ -887,6 +900,7 @@ function renderRoster() {
           <div class="l-name">${l.name}</div>
           <button class="edit-btn" onclick="openEditLearner('${l.id}')" title="Edit learner">✏ Edit</button>
           ${modSt === 'Done' ? `<button class="edit-btn" onclick="generateOne('${l.id}')" title="Generate this learner's certificate PDF">⬇ Generate</button>` : ''}
+          <button class="edit-btn" style="color:var(--re)" onclick="openDeleteLearner('${l.id}')" title="Delete learner">🗑 Delete</button>
         </div>
 
         ${l.org ? `<span class="l-org">${l.org}</span>` : ''}
@@ -1164,23 +1178,50 @@ function saveEditLearner() {
   showToast('✓', `${l.name} updated successfully`);
 }
 
-function deleteLearner() {
-  const l = STATE.learners.find(x => x.id === editingLearnerId);
+// ═══════════════════════════════════════════════════════════════════
+// DELETE LEARNER — choose to remove from this module only, or everywhere
+// ═══════════════════════════════════════════════════════════════════
+let pendingDeleteLearnerId = null;
+
+function openDeleteLearner(learnerId) {
+  const l = STATE.learners.find(x => x.id === learnerId);
   if (!l) return;
-  if (!confirm(`Remove ${l.name} from all modules? This cannot be undone.`)) return;
+  pendingDeleteLearnerId = learnerId;
+  const mod = STATE.modules.find(m => m.id === activeModId);
+  document.getElementById('deleteLearnerMsg').textContent = mod
+    ? `Remove ${l.name} from "${mod.name}" only, or delete them from the entire tracker (all modules)? This cannot be undone.`
+    : `Delete ${l.name} from the entire tracker (all modules)? This cannot be undone.`;
+  document.getElementById('deleteLearnerThisModBtn').style.display = mod ? '' : 'none';
+  document.getElementById('deleteLearnerModal').classList.remove('hidden');
+}
 
-  STATE.learners = STATE.learners.filter(x => x.id !== editingLearnerId);
-  // Remove all cert records for this learner
-  Object.keys(STATE.certs).forEach(k => {
-    if (k.startsWith(editingLearnerId + '__')) delete STATE.certs[k];
-  });
-
+function deleteFromThisModule() {
+  const l = STATE.learners.find(x => x.id === pendingDeleteLearnerId);
+  if (!l || !activeModId) { closeModal('deleteLearnerModal'); return; }
+  if (l.moduleStatuses) delete l.moduleStatuses[activeModId];
+  if (l.moduleDates) delete l.moduleDates[activeModId];
+  delete STATE.certs[certKey(l.id, activeModId)];
+  if (STATE.certNumbers) delete STATE.certNumbers[certKey(l.id, activeModId)];
   save();
+  closeModal('deleteLearnerModal');
   closeModal('editLearnerModal');
-  renderSidebar();
-  renderRoster();
-  renderModuleHeader();
-  showToast('✓', `${l.name} removed`);
+  renderSidebar(); renderRoster(); renderModuleHeader();
+  showToast('🗑', `${l.name} removed from this module`);
+  pendingDeleteLearnerId = null;
+}
+
+function deleteFromAllModules() {
+  const l = STATE.learners.find(x => x.id === pendingDeleteLearnerId);
+  if (!l) { closeModal('deleteLearnerModal'); return; }
+  STATE.learners = STATE.learners.filter(x => x.id !== l.id);
+  Object.keys(STATE.certs).forEach(k => { if (k.startsWith(l.id + '__')) delete STATE.certs[k]; });
+  if (STATE.certNumbers) Object.keys(STATE.certNumbers).forEach(k => { if (k.startsWith(l.id + '__')) delete STATE.certNumbers[k]; });
+  save();
+  closeModal('deleteLearnerModal');
+  closeModal('editLearnerModal');
+  renderSidebar(); renderRoster(); renderModuleHeader(); renderGlobalStat();
+  showToast('🗑', `${l.name} deleted from all modules`);
+  pendingDeleteLearnerId = null;
 }
 
 // ═══════════════════════════════════════════════════════════════════
